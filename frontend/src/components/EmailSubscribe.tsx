@@ -16,8 +16,8 @@ export default function EmailSubscribe() {
     setError('')
 
     try {
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api'
-      const response = await axios.post(`${API_URL}/subscribe`, { email })
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+      const response = await axios.post(`${API_URL}/api/subscribe`, { email })
       setMessage(response.data.message)
       setEmail('')
     } catch (err: any) {

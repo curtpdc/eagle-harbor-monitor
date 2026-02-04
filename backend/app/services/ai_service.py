@@ -84,6 +84,44 @@ Focus on:
     async def answer_question(self, question: str, articles: List[Article]) -> Dict:
         """Answer user question using RAG with Azure OpenAI"""
 
+        # If no articles, provide general information
+        if not articles or len(articles) == 0:
+            try:
+                prompt = f"""You are an expert on data center policy in Prince George's County and Charles County, Maryland.
+
+The user asks: {question}
+
+Provide a helpful, accurate answer based on your knowledge of:
+- Prince George's County data center moratorium (enacted January 26, 2021)
+- CR-98-2025 and Executive Order 42-2025 creating a Data Center Task Force
+- Planning Board's review of zoning amendments
+- Community concerns about environmental impacts
+- Current status of AR and RE zoning changes
+
+If you don't know specific recent updates, explain what you know and recommend checking official county sources."""
+
+                response = self.client.chat.completions.create(
+                    model=settings.AZURE_OPENAI_DEPLOYMENT,
+                    messages=[
+                        {"role": "system", "content": "You are an expert on data center policy in Prince George's County and Charles County, Maryland. Provide clear, factual answers."},
+                        {"role": "user", "content": prompt}
+                    ],
+                    temperature=0.7,
+                    max_tokens=2048
+                )
+
+                return {
+                    'answer': response.choices[0].message.content,
+                    'sources': [],
+                    'confidence': 0.7
+                }
+            except Exception as e:
+                return {
+                    'answer': f"I'm currently setting up my knowledge base. Please try again soon. In the meantime, you can check the Prince George's County Planning Board website for official updates on data center developments.",
+                    'sources': [],
+                    'confidence': 0.0
+                }
+
         # Build context from recent articles
         context = "\n\n".join([
             f"Article: {a.title}\n"
