@@ -49,21 +49,15 @@ async def subscribe(subscriber: SubscriberCreate, db: Session = Depends(get_db))
         verified=False
     )
     
-# Auto-verify for MVP (email service having issues)
-    new_subscriber.verified = True
-    
-    db.add(new_subscriber)
+db.add(new_subscriber)
     db.commit()
 
-    # Try to send verification email (don't fail if it doesn't work)
-    try:
-        email_service = EmailService()
-        await email_service.send_verification_email(subscriber.email, verification_token)
-    except Exception as e:
-        print(f"Warning: Could not send verification email: {e}")
+    # Send verification email
+    email_service = EmailService()
+    await email_service.send_verification_email(subscriber.email, verification_token)
     
     return SubscriberResponse(
-        message="Subscription successful! You'll receive alerts about data center developments."
+        message="Subscription successful! Please check your email to verify your address."
     )
 
 
