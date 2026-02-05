@@ -8,7 +8,7 @@ A real-time monitoring system tracking **data center developments in Prince Geor
 - **Workers**: Azure Functions (Python scrapers)
 - **Database**: PostgreSQL/SQLite
 - **AI**: Azure OpenAI (GPT-4o-mini via `AzureOpenAI` client)
-- **Notifications**: SendGrid email service
+- **Notifications**: Azure Communication Services email
 
 ## Agent Scope & Capabilities
 
@@ -73,9 +73,20 @@ Always flag articles mentioning: "CR-98-2025", "EO 42-2025", "Eagle Harbor", "Ch
 
 ### Azure Functions Architecture
 
-- [backend/function_app.py](backend/function_app.py) wraps FastAPI via Azure Functions HTTP trigger—routes all requests through FastAPI app
-- Uses `TestClient` to convert Azure `HttpRequest` to ASGI calls
-- Handles all HTTP methods (GET/POST/PUT/DELETE)
+**Critical: Two Separate `function_app.py` Files**:
+- [backend/function_app.py](backend/function_app.py) - HTTP wrapper for FastAPI deployment on Azure Functions (converts Azure HttpRequest to ASGI via `TestClient`)
+- [functions/function_app.py](functions/function_app.py) - Scheduled scrapers (LegistarScraper, RSSNewsScraper)
+
+**Backend Function App** (HTTP trigger):
+- Wraps entire FastAPI app for Azure Functions hosting
+- Routes all `/api/{*route}` paths through FastAPI via TestClient
+- Handles GET/POST/PUT/DELETE methods
+- Critical for Azure Functions consumption plan deployment
+
+**Functions App** (Timer triggers):
+- `LegistarScraper`: Cron `0 0 */2 * * *` (every 2 hours) - government meeting calendars
+- `RSSNewsScraper`: Cron `0 */30 * * * *` (every 30 min) - news feeds
+- Direct SQLAlchemy DB access (no FastAPI dependency)
 
 ## Essential Workflows & Commands
 
@@ -105,7 +116,7 @@ Schema in [database/schema.sql](database/schema.sql) defines critical indices on
 
 - `DATABASE_URL` - SQLite/PostgreSQL connection string
 - `AZURE_OPENAI_API_KEY`, `AZURE_OPENAI_ENDPOINT`, `AZURE_OPENAI_DEPLOYMENT` - GPT-4o-mini configuration
-- `SENDGRID_API_KEY`, `FROM_EMAIL` - Email service credentials
+- `AZURE_COMM_CONNECTION_STRING`, `FROM_EMAIL` - Azure Communication Services email credentials
 
 ## Developer Workflows & Debugging
 
@@ -122,6 +133,18 @@ GET http://localhost:8001/docs          # Swagger UI
 POST http://localhost:8001/api/subscribe
 GET http://localhost:8001/api/articles
 ```
+
+### Utility Scripts for Development
+Backend includes several utility scripts in `backend/` for common tasks:
+- `show_database.py` - Display all DB records (subscribers, articles, events)
+- `show_article.py <id>` - View specific article details
+- `manage_subscribers.py` - CLI for subscriber management
+- `analyze_articles.py` - Manually trigger AI analysis on unanalyzed articles
+- `run_scrapers.py` - Test scrapers locally without Azure Functions
+- `test_azure_email.py` - Verify Azure Communication Services email sending
+- `test_event_api.py` - Test event/calendar endpoints
+
+Run with activated venv: `python show_database.py`
 
 ### Scraper Debugging (Azure Functions)
 
@@ -140,7 +163,7 @@ func start
 
 ### EmailService Debugging
 
-Test email sending with verified SendGrid account:
+Test email sending with verified Azure Communication Services account:
 
 ```python
 # Quick test in Python REPL
@@ -151,7 +174,7 @@ email_service = EmailService()
 await email_service.send_verification_email("test@example.com", "test_token_123")
 ```
 
-Check SendGrid dashboard for delivery status and bounce events.
+Check Azure Portal > Communication Services for delivery status and bounce events. Sender address must be verified domain.
 
 ### AI Analysis Debugging
 
@@ -166,6 +189,17 @@ print(f"DEBUG: AI Response = {analysis}")  # Log raw response before JSON parsin
 Monitor Azure OpenAI API quota and errors in Azure Portal > Cognitive Services > Usage + quotas.
 
 ## Project-Specific Patterns
+
+### 1. Event/Calendar Feature (In Development)
+
+The `Event` model in [backend/app/models.py](backend/app/models.py) supports upcoming events tracking:
+- `event_date`, `event_type` (meeting/deadline/hearing/vote/protest)
+- `is_recurring`, `recurrence_rule` - For regular meetings (e.g., "Every 2nd Thursday")
+- `article_id` foreign key - Links events to source articles
+- Backend scripts: `extract_events.py`, `test_event_api.py`
+- Frontend component: [frontend/src/components/EventCalendar.tsx](frontend/src/components/EventCalendar.tsx)
+
+AI can extract event dates from article content when analyzing. See [docs/CALENDAR_IMPLEMENTATION.md](docs/CALENDAR_IMPLEMENTATION.md) for implementation plan.
 
 ### 2. EmailService Integration Patterns
 
@@ -184,15 +218,15 @@ See [backend/app/services/email_service.py](backend/app/services/email_service.p
 - Establishes baseline communication expectations
 
 **Instant Alert** (`send_instant_alert()`):
-- Batched send to multiple subscribers (SendGrid free tier limit: ~100 per send)
+- Batched send to multiple subscribers (Azure Communication Services limits apply)
 - Uses article priority_score to determine subject urgency (🚨 URGENT)
 - Embeds unsubscribe link in footer (CRITICAL for email compliance)
 - Fallback: If sending fails, logs error but doesn't crash route
 
-**SendGrid Configuration**:
-- Sender verified in SendGrid dashboard: `FROM_EMAIL` from config
+**Azure Communication Services Configuration**:
+- Sender verified in Azure Portal: `FROM_EMAIL` from config
 - Domain authentication required for production (DKIM/SPF)
-- Monitor bounce/complaint rates in SendGrid Event Webhook
+- Monitor delivery status in Azure Portal > Communication Services > Email logs
 
 ### 3. Scraper & Data Flow Patterns
 

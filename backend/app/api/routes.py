@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import desc
 from typing import Optional, List
 import secrets
+import logging
 from datetime import datetime, timedelta
 
 from app.database import get_db
@@ -133,16 +134,29 @@ async def ask_question(request: QuestionRequest, db: Session = Depends(get_db)):
     
     ai_service = AIService()
     
-    # Get relevant articles (simple keyword search for MVP)
-    keywords = request.question.lower().split()
-    articles = db.query(Article).filter(
-        Article.analyzed == True
-    ).order_by(desc(Article.priority_score)).limit(10).all()
+    try:
+        # Get relevant articles (simple keyword search for MVP)
+        keywords = request.question.lower().split()
+        articles = db.query(Article).filter(
+            Article.analyzed == True
+        ).order_by(desc(Article.priority_score)).limit(10).all()
+        
+        # Generate answer using AI with timeout handling
+        answer_data = await ai_service.answer_question(request.question, articles)
+        
+        return QuestionResponse(**answer_data)
     
-    # Generate answer using AI
-    answer_data = await ai_service.answer_question(request.question, articles)
-    
-    return QuestionResponse(**answer_data)
+    except TimeoutError as e:
+        raise HTTPException(
+            status_code=504, 
+            detail="Request timed out. Please try a simpler question or try again in a moment."
+        )
+    except Exception as e:
+        logging.error(f"Error in ask_question: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail="Unable to process your question at this time. Please try again later."
+        )
 
 
 @router.get("/health", response_model=HealthResponse)

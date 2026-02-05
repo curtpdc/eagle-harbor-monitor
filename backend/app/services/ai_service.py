@@ -3,6 +3,21 @@ from typing import List, Dict
 from app.config import settings
 from app.models import Article
 import json
+import asyncio
+from functools import wraps
+
+
+def async_timeout(seconds):
+    """Decorator to add timeout to async functions"""
+    def decorator(func):
+        @wraps(func)
+        async def wrapper(*args, **kwargs):
+            try:
+                return await asyncio.wait_for(func(*args, **kwargs), timeout=seconds)
+            except asyncio.TimeoutError:
+                raise TimeoutError(f"{func.__name__} timed out after {seconds} seconds")
+        return wrapper
+    return decorator
 
 
 class AIService:
@@ -10,9 +25,12 @@ class AIService:
         self.client = AzureOpenAI(
             api_key=settings.AZURE_OPENAI_API_KEY,
             api_version="2024-02-15-preview",
-            azure_endpoint=settings.AZURE_OPENAI_ENDPOINT
+            azure_endpoint=settings.AZURE_OPENAI_ENDPOINT,
+            timeout=30.0,  # 30 second timeout for API calls
+            max_retries=2  # Retry failed requests
         )
     
+    @async_timeout(45)  # 45 second total timeout including retries
     async def analyze_article(self, article_data: Dict) -> Dict:
         """Analyze article for relevance and priority using Azure OpenAI"""
         
@@ -81,6 +99,7 @@ Focus on:
             'key_points': []
         }
     
+    @async_timeout(60)  # 60 second timeout for Q&A (longer for complex queries)
     async def answer_question(self, question: str, articles: List[Article]) -> Dict:
         """Answer user question using RAG with Azure OpenAI"""
 
