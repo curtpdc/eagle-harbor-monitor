@@ -46,49 +46,77 @@ A professional, community-oriented real-time monitoring system tracking data cen
 ### Prerequisites
 - Python 3.11+
 - Node.js 18+
-- Azure OpenAI API key
-- SendGrid API key
+- Azure OpenAI API key (optional for local dev)
+- Azure Communication Services (optional for local dev)
 
-### Setup
+### Automated Setup (Recommended)
+
+**Windows:**
+```powershell
+git clone https://github.com/curtpdc/eagle-harbor-monitor.git
+cd eagle-harbor-monitor
+.\start-dev.ps1
+```
+
+**macOS/Linux:**
+```bash
+git clone https://github.com/curtpdc/eagle-harbor-monitor.git
+cd eagle-harbor-monitor
+chmod +x start-dev.sh
+./start-dev.sh
+```
+
+This will:
+- ✅ Set up Python virtual environment
+- ✅ Install all dependencies
+- ✅ Create configuration files
+- ✅ Start both backend and frontend servers
+- ✅ Open the app in your browser at http://localhost:3000
+
+### Manual Setup
 
 1. **Clone and prepare**
 ```bash
 git clone https://github.com/curtpdc/eagle-harbor-monitor.git
 cd eagle-harbor-monitor
-cp .env.example .env
 ```
 
-2. **Edit .env with your credentials**
-```bash
-AZURE_OPENAI_API_KEY=your_key_here
-SENDGRID_API_KEY=your_key_here
-FROM_EMAIL=your-verified-email@example.com
-```
-
-3. **Run backend**
+2. **Backend (Terminal 1)**
 ```bash
 cd backend
 python -m venv venv
-.\venv\Scripts\Activate.ps1  # Windows
+# Windows: .\venv\Scripts\Activate.ps1
+# macOS/Linux: source venv/bin/activate
 pip install -r requirements.txt
+cp ../.env.example .env
+# Edit .env with your API keys (optional for basic testing)
 python -m uvicorn app.main:app --reload
 ```
 
-4. **Run frontend** (in new terminal)
+3. **Frontend (Terminal 2)**
 ```bash
 cd frontend
 npm install
 npm run dev
 ```
 
-5. **Open browser**
+4. **Open browser**
 - Navigate to http://localhost:3000
-- Test subscription, verification, and Q&A
+- Test the UI, subscription form, and article viewing
 
-**For detailed setup:** See [`QUICK_START.md`](./QUICK_START.md)
+### Troubleshooting
+
+**Can't connect to localhost:3000?**
+- See [`LOCAL_DEV_GUIDE.md`](./LOCAL_DEV_GUIDE.md) for detailed troubleshooting
+- Verify both backend (port 8000) and frontend (port 3000) are running
+- Check for port conflicts: `netstat -ano | findstr :3000` (Windows) or `lsof -i :3000` (macOS/Linux)
+- Try accessing http://127.0.0.1:3000 instead
+
+**For detailed setup:** See [`LOCAL_DEV_GUIDE.md`](./LOCAL_DEV_GUIDE.md)
 
 ## 📋 Documentation
 
+- **[`LOCAL_DEV_GUIDE.md`](./LOCAL_DEV_GUIDE.md)** - 🆕 Comprehensive local development and troubleshooting
 - **[`QUICK_START.md`](./QUICK_START.md)** - 5-minute local setup guide
 - **[`SETUP_CHECKLIST.md`](./SETUP_CHECKLIST.md)** - Step-by-step environment verification
 - **[`COMPLETE_SETUP.md`](./COMPLETE_SETUP.md)** - Full deployment to Azure
@@ -266,26 +294,33 @@ GET /api/unsubscribe/{token}
 
 ## 🐛 Troubleshooting
 
+**localhost:3000 doesn't connect?**
+- Verify the frontend dev server is running: `npm run dev` in the frontend directory
+- Check if port 3000 is already in use: `netstat -ano | findstr :3000` (Windows) or `lsof -i :3000` (macOS/Linux)
+- Try accessing http://127.0.0.1:3000 instead of http://localhost:3000
+- Clear Next.js cache: `rm -rf .next && npm run dev`
+- See detailed guide: [`LOCAL_DEV_GUIDE.md`](./LOCAL_DEV_GUIDE.md)
+
 **Frontend won't connect to backend?**
-- Check `NEXT_PUBLIC_API_URL` in .env
-- Verify backend is running on port 8000
+- Check `NEXT_PUBLIC_API_URL` in frontend/.env.local (should be `http://localhost:8000/api`)
+- Verify backend is running on port 8000: Visit http://localhost:8000/docs
+- Check browser console for CORS or network errors
 
 **Emails not sending?**
-- Verify SendGrid API key in .env
-- Check FROM_EMAIL is verified in SendGrid dashboard
-- Look at backend console for SendGrid error messages
+- This is expected in local dev without Azure Communication Services configured
+- Emails will be logged to backend console instead
+- To enable: Add `AZURE_COMM_CONNECTION_STRING` and `FROM_EMAIL` to backend/.env
 
 **AI not responding?**
-- Verify Azure OpenAI API key
-- Check Azure Portal > Cognitive Services > Usage
-- Ensure GPT-4o-mini deployment exists
+- This is expected in local dev without Azure OpenAI configured
+- To enable: Add `AZURE_OPENAI_API_KEY`, `AZURE_OPENAI_ENDPOINT`, and `AZURE_OPENAI_DEPLOYMENT` to backend/.env
 
 **Database connection failed?**
-- For SQLite: Check write permissions in directory
-- For PostgreSQL: Verify connection string format
+- For SQLite (default): Check write permissions in backend directory
+- For PostgreSQL: Verify `DATABASE_URL` in backend/.env
 - Run: `curl http://localhost:8000/health`
 
-See [`ANALYSIS_REPORT.md`](./ANALYSIS_REPORT.md) for more detailed troubleshooting.
+**For comprehensive troubleshooting:** See [`LOCAL_DEV_GUIDE.md`](./LOCAL_DEV_GUIDE.md)
 
 ## 📞 Support & Contributing
 
