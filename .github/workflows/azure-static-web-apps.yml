@@ -27,9 +27,9 @@ jobs:
           action: "upload"
           app_location: "/frontend"
           api_location: ""
-          output_location: "out"
+          output_location: ".next"
         env:
-          NEXT_PUBLIC_API_URL: "http://eagle-harbor.centralus.azurecontainer.io:8000"
+          NEXT_PUBLIC_API_URL: "https://eagleharbor-api.azurewebsites.net/api"
 
   close_pull_request_job:
     if: github.event_name == 'pull_request' && github.event.action == 'closed'
