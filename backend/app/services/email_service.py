@@ -1,11 +1,11 @@
-from sendgrid import SendGridAPIClient
-from sendgrid.helpers.mail import Mail, Email, To, Content
+from azure.communication.email import EmailClient
 from app.config import settings
 
 
 class EmailService:
     def __init__(self):
-        self.sg = SendGridAPIClient(settings.SENDGRID_API_KEY)
+        # Azure Communication Services Email client
+        self.client = EmailClient.from_connection_string(settings.AZURE_COMM_CONNECTION_STRING)
         self.from_email = settings.FROM_EMAIL
     
     async def send_verification_email(self, to_email: str, token: str):
@@ -45,15 +45,21 @@ class EmailService:
         </html>
         """
         
-        message = Mail(
-            from_email=Email(self.from_email),
-            to_emails=To(to_email),
-            subject="Verify Your Email - Eagle Harbor Monitor",
-            html_content=Content("text/html", html_content)
-        )
+        message = {
+            "senderAddress": self.from_email,
+            "recipients": {
+                "to": [{"address": to_email}]
+            },
+            "content": {
+                "subject": "Verify Your Email - Eagle Harbor Monitor",
+                "html": html_content
+            }
+        }
         
         try:
-            self.sg.send(message)
+            poller = self.client.begin_send(message)
+            result = poller.result()
+            print(f"Verification email sent to {to_email}. Message ID: {result['id']}")
         except Exception as e:
             print(f"Error sending verification email: {e}")
             raise
@@ -107,15 +113,21 @@ class EmailService:
         </html>
         """
         
-        message = Mail(
-            from_email=Email(self.from_email),
-            to_emails=To(to_email),
-            subject="Welcome to Eagle Harbor Data Center Monitor!",
-            html_content=Content("text/html", html_content)
-        )
+        message = {
+            "senderAddress": self.from_email,
+            "recipients": {
+                "to": [{"address": to_email}]
+            },
+            "content": {
+                "subject": "Welcome to Eagle Harbor Data Center Monitor!",
+                "html": html_content
+            }
+        }
         
         try:
-            self.sg.send(message)
+            poller = self.client.begin_send(message)
+            result = poller.result()
+            print(f"Welcome email sent to {to_email}. Message ID: {result['id']}")
         except Exception as e:
             print(f"Error sending welcome email: {e}")
     
@@ -162,16 +174,23 @@ class EmailService:
         </html>
         """
         
-        # Send to all subscribers (batch in production)
-        for subscriber_email in subscribers[:100]:  # Limit for SendGrid free tier
-            message = Mail(
-                from_email=Email(self.from_email),
-                to_emails=To(subscriber_email),
-                subject=f"🚨 URGENT: {article['title'][:60]}...",
-                html_content=Content("text/html", html_content)
-            )
+        # Send to all subscribers
+        # Azure Communication Services has no daily limit (pay per use)
+        for subscriber_email in subscribers:
+            message = {
+                "senderAddress": self.from_email,
+                "recipients": {
+                    "to": [{"address": subscriber_email}]
+                },
+                "content": {
+                    "subject": f"🚨 URGENT: {article['title'][:60]}...",
+                    "html": html_content
+                }
+            }
             
             try:
-                self.sg.send(message)
+                poller = self.client.begin_send(message)
+                result = poller.result()
+                print(f"Alert sent to {subscriber_email}. Message ID: {result['id']}")
             except Exception as e:
                 print(f"Error sending alert to {subscriber_email}: {e}")

@@ -166,3 +166,54 @@ Provide a clear, factual answer based on the information provided. If you don't 
                 'sources': [],
                 'confidence': 0.0
             }
+    
+    async def extract_events(self, article_data: Dict) -> List[Dict]:
+        """Extract event dates and details from article content"""
+        
+        content = f"{article_data.get('title', '')} {article_data.get('content', '')}"
+        
+        prompt = f"""Extract all upcoming events, meetings, deadlines, and important dates from this article about Maryland data centers.
+
+Article Title: {article_data.get('title')}
+Content: {content[:3000]}
+
+Return a JSON array of events with this structure:
+[
+  {{
+    "title": "Planning Board Meeting on Data Center Zoning",
+    "event_type": "meeting",
+    "event_date": "2026-02-15T14:00:00",
+    "end_date": "2026-02-15T17:00:00",
+    "location": "Planning Board Chambers, Upper Marlboro, MD",
+    "description": "Public hearing on AR/RE zone amendment for data centers",
+    "county": "prince_georges"
+  }}
+]
+
+Event types: meeting, deadline, hearing, vote, protest, announcement
+Counties: prince_georges, charles, both
+Only include specific dates/times mentioned. Return empty array [] if no events found.
+Format dates as ISO 8601 (YYYY-MM-DDTHH:MM:SS).
+"""
+
+        try:
+            response = self.client.chat.completions.create(
+                model=settings.AZURE_OPENAI_DEPLOYMENT,
+                messages=[
+                    {"role": "system", "content": "You are an expert at extracting event information from government and news articles. Return only valid JSON."},
+                    {"role": "user", "content": prompt}
+                ],
+                temperature=0.1,
+                max_tokens=1024,
+                response_format={"type": "json_object"}
+            )
+
+            result = json.loads(response.choices[0].message.content)
+            # Handle both {"events": [...]} and direct array responses
+            events = result.get('events', result if isinstance(result, list) else [])
+            return events if isinstance(events, list) else []
+
+        except Exception as e:
+            print(f"Event extraction error: {e}")
+            return []
+

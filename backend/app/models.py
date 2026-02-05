@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean, Float, JSON
+from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean, Float, JSON, ForeignKey
 from sqlalchemy.sql import func
 from app.database import Base
 
@@ -31,10 +31,36 @@ class Article(Base):
     priority_score = Column(Integer)  # 1-10
     category = Column(String(100))  # policy, meeting, legislation, environmental, community
     county = Column(String(100))  # prince_georges, charles, both
+    event_date = Column(DateTime, index=True)  # For articles about future events
     
     # Processing status
     notified = Column(Boolean, default=False)
     analyzed = Column(Boolean, default=False)
+
+
+class Event(Base):
+    __tablename__ = "events"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    title = Column(String(500), nullable=False)
+    event_type = Column(String(100))  # meeting, deadline, hearing, vote, protest, announcement
+    event_date = Column(DateTime, nullable=False, index=True)
+    end_date = Column(DateTime)  # For multi-day events
+    location = Column(String(500))
+    description = Column(Text)
+    article_id = Column(Integer, ForeignKey('articles.id'))
+    county = Column(String(100))  # prince_georges, charles, both
+    
+    # Event metadata
+    is_recurring = Column(Boolean, default=False)
+    recurrence_rule = Column(String(200))  # e.g., "Every 2nd Thursday"
+    
+    # Status tracking
+    is_past = Column(Boolean, default=False)
+    is_cancelled = Column(Boolean, default=False)
+    
+    created_date = Column(DateTime, default=func.now())
+    sent_at = Column(DateTime, default=func.now())
 
 
 class AlertSent(Base):

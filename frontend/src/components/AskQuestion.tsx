@@ -16,16 +16,24 @@ export default function AskQuestion() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const chatContainerRef = useRef<HTMLDivElement>(null)
 
   const exampleQuestions = [
-    "What is the current moratorium status?",
+    "What is CR-98-2025 and what does it mean?",
     "When is the next Planning Board meeting?",
     "What zones are affected by the data center amendment?",
-    "What is CR-98-2025?",
+    "What is the current Chalk Point Power Plant status?",
+    "What are the environmental concerns?",
   ]
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [messages])
+  
+  useEffect(() => {
+    if (chatContainerRef.current) {
+      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight
+    }
   }, [messages])
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -80,28 +88,27 @@ export default function AskQuestion() {
         </div>
 
         {/* Chat Messages Area */}
-        <div className="bg-white min-h-[400px] max-h-[600px] overflow-y-auto p-6 space-y-4">
+        <div ref={chatContainerRef} className="bg-white min-h-[500px] max-h-[700px] overflow-y-auto p-6 space-y-4 flex flex-col">
           {messages.length === 0 ? (
-            <div className="text-center py-12">
+            <div className="flex-1 flex flex-col items-center justify-center text-center py-12">
               <div className="text-6xl mb-4">🏢</div>
               <h3 className="text-xl font-bold text-gray-800 mb-2">
-                Welcome to the Data Center Monitor
+                Welcome to Community Q&A
               </h3>
-              <p className="text-gray-600 mb-6 max-w-md mx-auto">
-                Get instant answers about local data center news, planning board decisions, 
-                zoning changes, and environmental impacts in your community.
+              <p className="text-gray-600 mb-8 max-w-md mx-auto leading-relaxed">
+                Get instant answers about data center policy, planning board decisions, zoning changes, and environmental impacts. Our AI assistant analyzes real-time news and government sources to provide accurate, up-to-date information.
               </p>
               
-              <div className="text-left max-w-lg mx-auto">
-                <p className="text-sm font-semibold text-gray-700 mb-3">💡 Try asking:</p>
+              <div className="text-left w-full max-w-lg">
+                <p className="text-sm font-semibold text-gray-700 mb-4">💡 Example questions to get started:</p>
                 <div className="grid gap-2">
                   {exampleQuestions.map((q, i) => (
                     <button
                       key={i}
-                      onClick={() => setQuestion(q)}
-                      className="text-left px-4 py-3 bg-blue-50 hover:bg-blue-100 rounded-lg transition text-sm text-gray-700 border border-blue-200"
+                      onClick={() => handleExampleClick(q)}
+                      className="w-full text-left px-4 py-3 bg-gradient-to-r from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100 rounded-lg transition text-sm text-gray-700 border border-blue-200 hover:border-blue-300 font-medium"
                     >
-                      <span className="font-medium text-primary">Q:</span> {q}
+                      <span className="text-primary font-bold">Q:</span> {q}
                     </button>
                   ))}
                 </div>
@@ -110,23 +117,20 @@ export default function AskQuestion() {
           ) : (
             <>
               {messages.map((msg, idx) => (
-                <div key={idx} className={`flex ${msg.type === 'question' ? 'justify-end' : 'justify-start'}`}>
-                  <div className={`max-w-[80%] ${msg.type === 'question' ? 'bg-primary text-white' : 'bg-gray-100 text-gray-800'} rounded-2xl px-5 py-4 shadow-sm`}>
+                <div key={idx} className={`flex ${msg.type === 'question' ? 'justify-end' : 'justify-start'} mb-2`}>
+                  <div className={`max-w-[85%] md:max-w-[70%] ${msg.type === 'question' ? 'bg-primary text-white rounded-3xl rounded-tr-lg' : 'bg-gray-100 text-gray-800 rounded-3xl rounded-tl-lg'} px-5 py-3 shadow-sm`}>
                     {msg.type === 'question' ? (
-                      <div>
-                        <div className="text-xs text-blue-100 mb-1 font-medium">You asked</div>
-                        <p className="leading-relaxed">{msg.content}</p>
-                      </div>
+                      <p className="leading-relaxed text-sm md:text-base">{msg.content}</p>
                     ) : (
                       <div>
                         <div className="flex items-center gap-2 mb-2">
-                          <span className="text-2xl">🤖</span>
+                          <span className="text-xl">🤖</span>
                           <span className="text-xs font-semibold text-gray-600">AI Assistant</span>
                         </div>
-                        <p className="leading-relaxed whitespace-pre-wrap">{msg.content}</p>
+                        <p className="leading-relaxed text-sm md:text-base whitespace-pre-wrap">{msg.content}</p>
                         {msg.sources && msg.sources.length > 0 && (
                           <div className="mt-4 pt-3 border-t border-gray-300">
-                            <p className="text-xs font-semibold text-gray-600 mb-2">📚 Sources:</p>
+                            <p className="text-xs font-semibold text-gray-600 mb-2">📚 Based on sources:</p>
                             <ul className="space-y-1">
                               {msg.sources.map((source: any, i: number) => (
                                 <li key={i} className="text-xs">
@@ -134,10 +138,11 @@ export default function AskQuestion() {
                                     href={source.url}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="text-primary hover:underline font-medium"
+                                    className="text-primary hover:underline font-medium break-words"
                                   >
                                     {source.title}
                                   </a>
+                                  {source.date && <span className="text-gray-500"> • {new Date(source.date).toLocaleDateString()}</span>}
                                 </li>
                               ))}
                             </ul>
@@ -149,15 +154,15 @@ export default function AskQuestion() {
                 </div>
               ))}
               {loading && (
-                <div className="flex justify-start">
-                  <div className="bg-gray-100 rounded-2xl px-5 py-4 shadow-sm">
+                <div className="flex justify-start mb-2">
+                  <div className="bg-gray-100 rounded-3xl rounded-tl-lg px-5 py-3 shadow-sm">
                     <div className="flex items-center gap-3">
                       <div className="flex gap-1">
                         <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{animationDelay: '0ms'}}></div>
                         <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{animationDelay: '150ms'}}></div>
                         <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{animationDelay: '300ms'}}></div>
                       </div>
-                      <span className="text-sm text-gray-600">Analyzing your question...</span>
+                      <span className="text-sm text-gray-600">Reading sources and thinking...</span>
                     </div>
                   </div>
                 </div>
@@ -169,7 +174,7 @@ export default function AskQuestion() {
 
         {/* Error Display */}
         {error && (
-          <div className="mx-6 mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+          <div className="mx-6 mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm font-medium">
             ⚠️ {error}
           </div>
         )}
@@ -181,26 +186,22 @@ export default function AskQuestion() {
               type="text"
               value={question}
               onChange={(e) => setQuestion(e.target.value)}
-              placeholder="Type your question about data centers..."
-              className="flex-1 px-5 py-4 border-2 border-gray-300 rounded-xl focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition text-gray-800 placeholder-gray-500"
+              placeholder="Ask about data center developments, zoning, policy..."
+              className="flex-1 px-5 py-4 border-2 border-gray-300 rounded-xl focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition text-gray-800 placeholder-gray-500 text-sm md:text-base"
               disabled={loading}
             />
             <button
               type="submit"
               disabled={loading || !question.trim()}
-              className="px-8 py-4 bg-gradient-to-r from-primary to-blue-800 text-white font-bold rounded-xl hover:from-blue-800 hover:to-primary transition disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl"
+              className="px-6 md:px-8 py-4 bg-gradient-to-r from-primary to-blue-800 text-white font-bold rounded-xl hover:from-blue-800 hover:to-primary transition disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl text-sm md:text-base"
             >
               {loading ? (
-                <span className="flex items-center gap-2">
-                  <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                </span>
+                <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
               ) : (
-                <span className="flex items-center gap-2">
-                  Send <span className="text-lg">→</span>
-                </span>
+                'Send'
               )}
             </button>
           </form>

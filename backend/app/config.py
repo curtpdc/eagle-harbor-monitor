@@ -1,8 +1,9 @@
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 from typing import List
 
 
 class Settings(BaseSettings):
+    model_config = SettingsConfigDict(env_file=".env", case_sensitive=False, extra="ignore")
     # Database
     DATABASE_URL: str
     
@@ -16,9 +17,9 @@ class Settings(BaseSettings):
     AZURE_OPENAI_API_KEY: str
     AZURE_OPENAI_DEPLOYMENT: str = "gpt-4o-mini"
     
-    # SendGrid
-    SENDGRID_API_KEY: str
-    FROM_EMAIL: str
+    # Azure Communication Services Email
+    AZURE_COMM_CONNECTION_STRING: str
+    FROM_EMAIL: str = "curtis.prince@xigusa.com"
     
     # Application
     APP_NAME: str = "Eagle Harbor Data Center Monitor"
@@ -37,9 +38,4 @@ class Settings(BaseSettings):
     WEEKLY_DIGEST_DAY: int = 4  # Friday
     WEEKLY_DIGEST_HOUR: int = 15  # 3 PM
     
-    class Config:
-        env_file = ".env"
-        case_sensitive = False
-
-
 settings = Settings()

@@ -1,3 +1,3 @@
-cd C:\Users\cprin\eagle-harbor-monitor\backend
-.\venv\Scripts\Activate.ps1
-python -m uvicorn app.main:app --reload --port 8000
+$scriptPath = Split-Path -Parent $MyInvocation.MyCommand.Path
+Set-Location $scriptPath
+& .\venv\Scripts\python.exe -m uvicorn app.main:app --reload --port 8000

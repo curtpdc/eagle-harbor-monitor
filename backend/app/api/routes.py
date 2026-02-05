@@ -1,12 +1,12 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from sqlalchemy import desc
-from typing import Optional
+from typing import Optional, List
 import secrets
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from app.database import get_db
-from app.models import Subscriber, Article
+from app.models import Subscriber, Article, Event
 from app.schemas import (
     SubscriberCreate,
     SubscriberResponse,
@@ -49,7 +49,7 @@ async def subscribe(subscriber: SubscriberCreate, db: Session = Depends(get_db))
         verified=False
     )
     
-db.add(new_subscriber)
+    db.add(new_subscriber)
     db.commit()
 
     # Send verification email
@@ -165,3 +165,91 @@ async def health_check(db: Session = Depends(get_db)):
         database=db_status,
         last_scrape=last_scrape
     )
+
+
+@router.get("/events/upcoming")
+async def get_upcoming_events(
+    days: int = Query(90, description="Number of days ahead to look"),
+    county: Optional[str] = Query(None, description="Filter by county (prince_georges, charles, or both)"),
+    db: Session = Depends(get_db)
+):
+    """Get upcoming events for the next N days"""
+    
+    now = datetime.now()
+    end_date = now + timedelta(days=days)
+    
+    query = db.query(Event).filter(
+        Event.event_date >= now,
+        Event.event_date <= end_date,
+        Event.is_cancelled == False
+    )
+    
+    if county:
+        query = query.filter(Event.county == county)
+    
+    events = query.order_by(Event.event_date).all()
+    
+    return {
+        "events": [
+            {
+                "id": event.id,
+                "title": event.title,
+                "event_type": event.event_type,
+                "event_date": event.event_date.isoformat() if event.event_date else None,
+                "end_date": event.end_date.isoformat() if event.end_date else None,
+                "location": event.location,
+                "description": event.description,
+                "county": event.county,
+                "is_recurring": event.is_recurring,
+                "article_id": event.article_id
+            }
+            for event in events
+        ],
+        "count": len(events),
+        "period": f"next {days} days",
+        "as_of": now.isoformat()
+    }
+
+
+@router.get("/events/timeline")
+async def get_event_timeline(
+    days_back: int = Query(180, description="Number of days back to look"),
+    county: Optional[str] = Query(None, description="Filter by county (prince_georges, charles, or both)"),
+    db: Session = Depends(get_db)
+):
+    """Get historical event timeline for the past N days"""
+    
+    now = datetime.now()
+    start_date = now - timedelta(days=days_back)
+    
+    query = db.query(Event).filter(
+        Event.event_date >= start_date,
+        Event.event_date <= now
+    )
+    
+    if county:
+        query = query.filter(Event.county == county)
+    
+    events = query.order_by(desc(Event.event_date)).all()
+    
+    return {
+        "events": [
+            {
+                "id": event.id,
+                "title": event.title,
+                "event_type": event.event_type,
+                "event_date": event.event_date.isoformat() if event.event_date else None,
+                "end_date": event.end_date.isoformat() if event.end_date else None,
+                "location": event.location,
+                "description": event.description,
+                "county": event.county,
+                "is_past": event.is_past,
+                "is_cancelled": event.is_cancelled,
+                "article_id": event.article_id
+            }
+            for event in events
+        ],
+        "count": len(events),
+        "period": f"past {days_back} days",
+        "as_of": now.isoformat()
+    }
