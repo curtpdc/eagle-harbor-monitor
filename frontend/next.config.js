@@ -1,11 +1,13 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: 'export',
+  // Use 'export' only for production static builds (Azure Static Web Apps)
+  // For local development, we need the dev server without static export
+  output: process.env.NODE_ENV === 'production' ? 'export' : undefined,
   images: {
     unoptimized: true,
   },
   env: {
-    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'https://eagleharbor-api.azurewebsites.net/api',
+    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api',
   },
 }
 

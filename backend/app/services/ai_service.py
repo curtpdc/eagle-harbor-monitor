@@ -5,6 +5,9 @@ from app.models import Article
 import json
 import asyncio
 from functools import wraps
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 def async_timeout(seconds):
@@ -22,17 +25,36 @@ def async_timeout(seconds):
 
 class AIService:
     def __init__(self):
-        self.client = AzureOpenAI(
-            api_key=settings.AZURE_OPENAI_API_KEY,
-            api_version="2024-02-15-preview",
-            azure_endpoint=settings.AZURE_OPENAI_ENDPOINT,
-            timeout=30.0,  # 30 second timeout for API calls
-            max_retries=2  # Retry failed requests
-        )
+        # Azure OpenAI client (optional for local dev)
+        if settings.AZURE_OPENAI_API_KEY:
+            self.client = AzureOpenAI(
+                api_key=settings.AZURE_OPENAI_API_KEY,
+                api_version="2024-02-15-preview",
+                azure_endpoint=settings.AZURE_OPENAI_ENDPOINT,
+                timeout=30.0,  # 30 second timeout for API calls
+                max_retries=2  # Retry failed requests
+            )
+            self.enabled = True
+        else:
+            self.client = None
+            self.enabled = False
+            logger.warning("AI service disabled: AZURE_OPENAI_API_KEY not configured")
     
     @async_timeout(45)  # 45 second total timeout including retries
     async def analyze_article(self, article_data: Dict) -> Dict:
         """Analyze article for relevance and priority using Azure OpenAI"""
+        
+        if not self.enabled:
+            logger.info(f"[DEV MODE] Would analyze article: {article_data.get('title', 'Unknown')}")
+            # Return mock analysis for dev mode
+            return {
+                "relevance_score": 5,
+                "priority_score": 5,
+                "category": "policy",
+                "county": "prince_georges",
+                "summary": "AI analysis not available in development mode",
+                "key_points": ["Configure AZURE_OPENAI_API_KEY to enable AI analysis"]
+            }
         
         content = f"{article_data.get('title', '')} {article_data.get('content', '')[:2000]}"
         
@@ -102,6 +124,14 @@ Focus on:
     @async_timeout(60)  # 60 second timeout for Q&A (longer for complex queries)
     async def answer_question(self, question: str, articles: List[Article]) -> Dict:
         """Answer user question using RAG with Azure OpenAI"""
+        
+        if not self.enabled:
+            logger.info(f"[DEV MODE] Would answer question: {question}")
+            return {
+                'answer': "AI Q&A is not available in development mode. Please configure AZURE_OPENAI_API_KEY in backend/.env to enable this feature. For information about Prince George's County data center developments, visit the Planning Board website.",
+                'sources': [],
+                'confidence': 0.0
+            }
 
         # If no articles, provide general information
         if not articles or len(articles) == 0:
