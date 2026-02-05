@@ -1,5 +1,5 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from typing import List
+from typing import List, Optional
 
 
 class Settings(BaseSettings):
@@ -12,14 +12,14 @@ class Settings(BaseSettings):
     API_PORT: int = 8000
     API_RELOAD: bool = True
     
-    # Azure OpenAI
+    # Azure OpenAI (optional for local dev)
     AZURE_OPENAI_ENDPOINT: str = "https://xig-openai-resource.cognitiveservices.azure.com/"
-    AZURE_OPENAI_API_KEY: str
+    AZURE_OPENAI_API_KEY: Optional[str] = None
     AZURE_OPENAI_DEPLOYMENT: str = "gpt-4o-mini"
     
-    # Azure Communication Services Email
-    AZURE_COMM_CONNECTION_STRING: str
-    FROM_EMAIL: str = "curtis.prince@xigusa.com"
+    # Azure Communication Services Email (optional for local dev)
+    AZURE_COMM_CONNECTION_STRING: Optional[str] = None
+    FROM_EMAIL: str = "alerts@eagleharbormonitor.org"
     
     # Application
     APP_NAME: str = "Eagle Harbor Data Center Monitor"

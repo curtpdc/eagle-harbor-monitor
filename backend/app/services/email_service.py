@@ -1,15 +1,30 @@
 from azure.communication.email import EmailClient
 from app.config import settings
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class EmailService:
     def __init__(self):
-        # Azure Communication Services Email client
-        self.client = EmailClient.from_connection_string(settings.AZURE_COMM_CONNECTION_STRING)
-        self.from_email = settings.FROM_EMAIL
+        # Azure Communication Services Email client (optional for local dev)
+        if settings.AZURE_COMM_CONNECTION_STRING:
+            self.client = EmailClient.from_connection_string(settings.AZURE_COMM_CONNECTION_STRING)
+            self.from_email = settings.FROM_EMAIL
+            self.enabled = True
+        else:
+            self.client = None
+            self.from_email = settings.FROM_EMAIL
+            self.enabled = False
+            logger.warning("Email service disabled: AZURE_COMM_CONNECTION_STRING not configured")
     
     async def send_verification_email(self, to_email: str, token: str):
         """Send email verification link"""
+        
+        if not self.enabled:
+            logger.info(f"[DEV MODE] Would send verification email to {to_email} with token {token}")
+            logger.info(f"[DEV MODE] Verification URL: {settings.APP_URL}/verify/{token}")
+            return
         
         verify_url = f"{settings.APP_URL}/verify/{token}"
         
@@ -66,6 +81,11 @@ class EmailService:
     
     async def send_welcome_email(self, to_email: str, unsubscribe_token: str):
         """Send welcome email after verification"""
+        
+        if not self.enabled:
+            logger.info(f"[DEV MODE] Would send welcome email to {to_email}")
+            logger.info(f"[DEV MODE] Unsubscribe URL: {settings.APP_URL}/unsubscribe/{unsubscribe_token}")
+            return
         
         unsubscribe_url = f"{settings.APP_URL}/unsubscribe/{unsubscribe_token}"
         
@@ -133,6 +153,11 @@ class EmailService:
     
     async def send_instant_alert(self, subscribers: list, article: dict):
         """Send instant alert for high-priority articles"""
+        
+        if not self.enabled:
+            logger.info(f"[DEV MODE] Would send instant alert to {len(subscribers)} subscribers")
+            logger.info(f"[DEV MODE] Article: {article.get('title', 'Unknown title')}")
+            return
         
         # Get first subscriber's unsubscribe token for template
         # In production, personalize per subscriber
