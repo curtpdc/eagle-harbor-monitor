@@ -30,7 +30,7 @@ export default function EventCalendar() {
   const [error, setError] = useState<string | null>(null);
   const [view, setView] = useState<'upcoming' | 'timeline'>('upcoming');
 
-  const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+  const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
   useEffect(() => {
     fetchEvents();
@@ -41,12 +41,12 @@ export default function EventCalendar() {
       setLoading(true);
       
       // Fetch upcoming events (next 90 days)
-      const upcomingRes = await fetch(`${API_BASE}/events/upcoming?days=90`);
+      const upcomingRes = await fetch(`${API_BASE}/api/events/upcoming?days=90`);
       const upcomingData: EventsResponse = await upcomingRes.json();
       setUpcomingEvents(upcomingData.events);
 
       // Fetch timeline events (past 180 days)
-      const timelineRes = await fetch(`${API_BASE}/events/timeline?days_back=180`);
+      const timelineRes = await fetch(`${API_BASE}/api/events/timeline?days_back=180`);
       const timelineData: EventsResponse = await timelineRes.json();
       setTimelineEvents(timelineData.events);
 

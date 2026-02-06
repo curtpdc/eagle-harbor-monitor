@@ -73,40 +73,60 @@ Always flag articles mentioning: "CR-98-2025", "EO 42-2025", "Eagle Harbor", "Ch
 
 ### Azure Functions Architecture
 
-**Critical: Two Separate `function_app.py` Files**:
-- [backend/function_app.py](backend/function_app.py) - HTTP wrapper for FastAPI deployment on Azure Functions (converts Azure HttpRequest to ASGI via `TestClient`)
-- [functions/function_app.py](functions/function_app.py) - Scheduled scrapers (LegistarScraper, RSSNewsScraper)
+**Critical: Two Separate `function_app.py` Files in Different Directories**:
 
-**Backend Function App** (HTTP trigger):
-- Wraps entire FastAPI app for Azure Functions hosting
-- Routes all `/api/{*route}` paths through FastAPI via TestClient
-- Handles GET/POST/PUT/DELETE methods
-- Critical for Azure Functions consumption plan deployment
+1. **[backend/function_app.py](backend/function_app.py)** - **HTTP wrapper** for Azure Functions hosting
+   - Wraps entire FastAPI app using `TestClient` (from `starlette.testclient`)
+   - Converts Azure `HttpRequest` to FastAPI-compatible requests
+   - Routes all HTTP methods (GET/POST/PUT/DELETE) to FastAPI routes
+   - Entry point: `@app.route(route="{*route}")` catches all paths
+   - Used for Azure Functions consumption plan deployment (serverless hosting)
+   
+2. **[functions/function_app.py](functions/function_app.py)** - **Scheduled scrapers** (Timer triggers)
+   - `LegistarScraper`: `@app.schedule(schedule="0 0 */2 * * *")` - every 2 hours
+   - `RSSNewsScraper`: `@app.schedule(schedule="0 */30 * * * *")` - every 30 min
+   - Direct SQLAlchemy DB access (no FastAPI dependency)
+   - Uses `requests`, `feedparser`, `BeautifulSoup` for web scraping
+   - Separate requirements.txt (no FastAPI installed here)
 
-**Functions App** (Timer triggers):
-- `LegistarScraper`: Cron `0 0 */2 * * *` (every 2 hours) - government meeting calendars
-- `RSSNewsScraper`: Cron `0 */30 * * * *` (every 30 min) - news feeds
-- Direct SQLAlchemy DB access (no FastAPI dependency)
+**Why Two Files?**: Backend wraps existing web app for serverless hosting; Functions app runs background jobs independently.
 
 ## Essential Workflows & Commands
 
-### Local Development (Backend)
+### Quick Start (Automated)
 
+**Windows:**
+```powershell
+.\start-dev.ps1    # Auto-setup venv, install deps, start both servers
+```
+
+**Linux/macOS:**
+```bash
+./start-dev.sh     # Auto-setup venv, install deps, start both servers
+```
+
+These scripts open backend (`:8000`) and frontend (`:3000`) in separate terminal windows.
+
+### Local Development (Manual)
+
+**Backend:**
 ```bash
 cd backend
 python -m venv venv
-.\venv\Scripts\Activate.ps1        # Windows
+.\venv\Scripts\Activate.ps1        # Windows: PowerShell
+source venv/bin/activate            # Linux/macOS
 pip install -r requirements.txt
-uvicorn app.main:app --reload      # Runs on http://localhost:8000
+uvicorn app.main:app --reload      # http://localhost:8000
 ```
 
-### Frontend Dev
-
+**Frontend:**
 ```bash
 cd frontend
 npm install
 npm run dev                          # http://localhost:3000
 ```
+
+**Note**: Azure services (OpenAI, Communication Services) are **optional for local development**. Backend runs in dev mode with mock responses when `AZURE_OPENAI_API_KEY` is unset.
 
 ### Database Setup
 
@@ -279,6 +299,19 @@ In [backend/app/models.py](backend/app/models.py), `AlertSent.sent_to` and `arti
 - EmailService methods like `send_verification_email()` are `async` 
 - AI analysis calls `await` (though service is synchronous)
 
+### 8. Frontend Architecture
+
+- **Framework**: Next.js 14+ with App Router (`frontend/src/app/`)
+- **Styling**: Tailwind CSS with custom color scheme
+- **Components**: React functional components in `frontend/src/components/`
+- **API Calls**: Direct fetch to backend at `http://localhost:8000/api` (dev) or production URL
+- **Key Components**:
+  - `EventCalendar.tsx` - Calendar view for upcoming meetings/events
+  - Article listing components with priority badges (🚨 URGENT for priority 8+)
+  - Email subscription form with inline validation
+- **Static Export**: Uses `staticwebapp.config.json` for Azure Static Web Apps routing
+- **Navigation**: Client-side routing with fallback to `/index.html` for SPAs
+
 ## New Feature Additions
 
 When adding features:
@@ -298,10 +331,28 @@ When adding features:
 
 ## Deployment
 
-- Backend: Azure App Service (via [backend/Dockerfile](backend/Dockerfile))
-- Frontend: Azure Static Web Apps via Next.js build
-- Functions: Azure Functions (Python) for web scrapers
-- Database: Azure Database for PostgreSQL (or local SQLite for dev)
+### Production Stack
+- **Backend**: Azure App Service (containerized via [backend/Dockerfile](backend/Dockerfile))
+- **Frontend**: Azure Static Web Apps (Next.js static export)
+- **Workers**: Azure Functions (Python scrapers in `functions/`)
+- **Database**: Azure Database for PostgreSQL (or local SQLite for dev)
 
-See [DEPLOYMENT_STATUS.md](DEPLOYMENT_STATUS.md) and [docs/SETUP.md](docs/SETUP.md) for detailed deploy procedures.
+### Container Deployment Pattern
+[backend/Dockerfile](backend/Dockerfile) follows multi-stage pattern:
+```dockerfile
+FROM python:3.11-slim
+WORKDIR /app
+RUN apt-get update && apt-get install -y gcc  # Needed for psycopg2
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+COPY . .
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+```
+
+### Deployment Scripts
+- `deploy-backend.ps1` - Deploy backend to Azure App Service
+- `deploy-containerapp.ps1` - Deploy as Azure Container App
+- `deploy-postgresql.ps1` - Provision Azure Database for PostgreSQL
+
+See [DEPLOYMENT_STATUS.md](DEPLOYMENT_STATUS.md) and [docs/SETUP.md](docs/SETUP.md) for detailed procedures.
 

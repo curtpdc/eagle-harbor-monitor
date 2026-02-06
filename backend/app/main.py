@@ -16,7 +16,11 @@ app = FastAPI(
 # CORS configuration
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Configure properly for production
+    allow_origins=[
+        "http://localhost:3000",
+        "https://calm-moss-0bea6ad10.4.azurestaticapps.net",
+        "*"  # Allow all origins - tighten in production if needed
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
