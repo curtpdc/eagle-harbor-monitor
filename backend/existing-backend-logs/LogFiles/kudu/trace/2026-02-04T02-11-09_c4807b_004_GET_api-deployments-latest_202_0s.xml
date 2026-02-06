@@ -1,0 +1,9 @@
+<step title="Incoming Request" date="2026-02-04T02:11:09.077" instance="c4807b" url="/api/deployments/latest" method="GET" type="request" pid="768,1,15" Accept="*/*" Host="eagle-harbor-backend-api.scm.azurewebsites.net" User-Agent="AZURECLI/2.81.0 (MSI)" Accept-Encoding="gzip, deflate" Authorization="Bea..." x-ms-client-request-id="a3d513c3-016e-11f1-b8fc-103d1cb53163" X-ARR-LOG-ID="a3d513c3-016e-11f1-b8fc-103d1cb53163" CLIENT-IP="73.135.149.229:53181" X-SITE-DEPLOYMENT-ID="eagle-harbor-backend-api" WAS-DEFAULT-HOSTNAME="eagle-harbor-backend-api.scm.azurewebsites.net" X-Forwarded-Proto="https" X-AppService-Proto="https" X-Forwarded-TlsVersion="1.3" X-WAWS-Unencoded-URL="/api/deployments/latest" X-Client-IP="73.135.149.229" X-Client-Port="53181" >
+  <step title="Cleanup Xml Logs" date="2026-02-04T02:11:09.080" /><!-- duration: 5ms -->
+  <step title="DeploymentService.GetResult" date="2026-02-04T02:11:09.104" >
+    <step title="DeploymentService.GetLatestDeployment" date="2026-02-04T02:11:09.107" >
+      <step title="DeploymentManager.GetResults" date="2026-02-04T02:11:09.110" /><!-- duration: 198ms -->
+    </step><!-- duration: 206ms -->
+  </step><!-- duration: 213ms -->
+  <step title="Outgoing response" date="2026-02-04T02:11:09.338" type="response" statusCode="202" statusText="Accepted" /><!-- duration: 3ms -->
+</step><!-- duration: 266ms -->

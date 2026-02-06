@@ -1,0 +1,296 @@
+2026-02-04T05:33:13  Fetching changes.
+2026-02-04T05:33:13    Starting  LocalZipHandler
+2026-02-04T05:33:13    Cleaning up temp folders from previous zip deployments and extracting pushed zip file /tmp/zipdeploy/35aad3ce-c766-4cb8-8987-3c49c89b15ba.zip (0.03 MB) to /tmp/zipdeploy/extracted
+2026-02-04T05:33:17  Updating submodules.
+2026-02-04T05:33:17  Preparing deployment for commit id 'c7e674bb-d'.
+2026-02-04T05:33:17  PreDeployment: context.CleanOutputPath False
+2026-02-04T05:33:17  PreDeployment: context.OutputPath /home/site/wwwroot
+2026-02-04T05:33:18  Repository path is /tmp/zipdeploy/extracted
+2026-02-04T05:33:18  Running oryx build...
+2026-02-04T05:33:18    Command: oryx build /tmp/zipdeploy/extracted -o /home/site/wwwroot --platform python --platform-version 3.11 -p virtualenv_name=antenv --log-file /tmp/build-debug.log  -i /tmp/8de63aee67d08e1 --compress-destination-dir | tee /tmp/oryx-build.log
+2026-02-04T05:33:21    Operation performed by Microsoft Oryx, https://github.com/Microsoft/Oryx
+2026-02-04T05:33:21    You can report issues at https://github.com/Microsoft/Oryx/issues
+2026-02-04T05:33:21    
+2026-02-04T05:33:21    Oryx Version: 0.2.20251022.1+bef98bc7139feefaa74be16de9d835e2c85385d4, Commit: bef98bc7139feefaa74be16de9d835e2c85385d4, ReleaseTagName: 20251022.1
+2026-02-04T05:33:21    
+2026-02-04T05:33:21    Build Operation ID: 7f023c1955571a7b
+2026-02-04T05:33:21    Repository Commit : c7e674bb-d045-470d-baf8-b444b158ce11
+2026-02-04T05:33:21    OS Type           : bullseye
+2026-02-04T05:33:21    Image Type        : githubactions
+2026-02-04T05:33:21    
+2026-02-04T05:33:21    Primary SDK Storage URL: https://oryx-cdn.microsoft.io
+2026-02-04T05:33:21    Backup SDK Storage URL: 
+2026-02-04T05:33:21    Detecting platforms...
+2026-02-04T05:33:21    External SDK provider is enabled.
+2026-02-04T05:33:21    Requesting metadata for platform python from external SDK provider
+2026-02-04T05:33:22    Requesting metadata for platform python from external SDK provider
+2026-02-04T05:33:22    Detected following platforms:
+2026-02-04T05:33:22      python: 3.11.14
+2026-02-04T05:33:22    Requesting metadata for platform python from external SDK provider
+2026-02-04T05:33:26    Version '3.11.14' of platform 'python' is not installed. Generating script to install it...
+2026-02-04T05:33:26    
+2026-02-04T05:33:26    Using intermediate directory '/tmp/8de63aee67d08e1'.
+2026-02-04T05:33:26    
+2026-02-04T05:33:26    Copying files to the intermediate directory...
+2026-02-04T05:33:26    Done in 0 sec(s).
+2026-02-04T05:33:26    
+2026-02-04T05:33:26    Source directory     : /tmp/8de63aee67d08e1
+2026-02-04T05:33:27    Destination directory: /home/site/wwwroot
+2026-02-04T05:33:27    
+2026-02-04T05:33:27    
+2026-02-04T05:33:27    Downloading and extracting 'python' version '3.11.14' to '/tmp/oryx/platforms/python/3.11.14'...
+2026-02-04T05:33:27    Detected image debian flavor: bullseye.
+2026-02-04T05:33:27    Skipping download of python version 3.11.14 as it is available in external sdk provider cache...
+2026-02-04T05:33:27    Extracting contents...
+2026-02-04T05:33:46    Successfully extracted python version 3.11.14 from external sdk provider cache...
+2026-02-04T05:33:46    Done in 18 sec(s).
+2026-02-04T05:33:46    
+2026-02-04T05:33:46    image detector file exists, platform is python..
+2026-02-04T05:33:46    OS detector file exists, OS is bullseye..
+2026-02-04T05:33:46    Python Version: /tmp/oryx/platforms/python/3.11.14/bin/python3.11
+2026-02-04T05:33:46    Creating directory for command manifest file if it does not exist
+2026-02-04T05:33:46    Removing existing manifest file
+2026-02-04T05:33:46    Python Virtual Environment: antenv
+2026-02-04T05:33:46    Creating virtual environment...
+2026-02-04T05:33:46    Executing: /tmp/oryx/platforms/python/3.11.14/bin/python3.11 -m venv antenv --copies --system-site-packages
+2026-02-04T05:33:54    Activating virtual environment...
+2026-02-04T05:33:54    Running pip install...
+2026-02-04T05:34:29    [05:33:55+0000] Collecting fastapi==0.109.0 (from -r requirements.txt (line 1))
+2026-02-04T05:34:29    [05:33:55+0000]   Downloading fastapi-0.109.0-py3-none-any.whl.metadata (24 kB)
+2026-02-04T05:34:29    [05:33:55+0000] Collecting uvicorn==0.27.0 (from uvicorn[standard]==0.27.0->-r requirements.txt (line 2))
+2026-02-04T05:34:29    [05:33:55+0000]   Downloading uvicorn-0.27.0-py3-none-any.whl.metadata (6.4 kB)
+2026-02-04T05:34:29    [05:33:55+0000] Collecting sqlalchemy==2.0.25 (from -r requirements.txt (line 3))
+2026-02-04T05:34:29    [05:33:56+0000]   Downloading SQLAlchemy-2.0.25-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (9.6 kB)
+2026-02-04T05:34:29    [05:33:56+0000] Collecting alembic==1.13.1 (from -r requirements.txt (line 4))
+2026-02-04T05:34:29    [05:33:56+0000]   Downloading alembic-1.13.1-py3-none-any.whl.metadata (7.4 kB)
+2026-02-04T05:34:29    [05:33:57+0000] Collecting pydantic==2.10.5 (from -r requirements.txt (line 5))
+2026-02-04T05:34:30    [05:33:57+0000]   Downloading pydantic-2.10.5-py3-none-any.whl.metadata (30 kB)
+2026-02-04T05:34:30    [05:33:57+0000] Collecting pydantic-settings==2.7.1 (from -r requirements.txt (line 6))
+2026-02-04T05:34:30    [05:33:57+0000]   Downloading pydantic_settings-2.7.1-py3-none-any.whl.metadata (3.5 kB)
+2026-02-04T05:34:30    [05:33:57+0000] Collecting python-dotenv==1.0.0 (from -r requirements.txt (line 7))
+2026-02-04T05:34:30    [05:33:57+0000]   Downloading python_dotenv-1.0.0-py3-none-any.whl.metadata (21 kB)
+2026-02-04T05:34:30    [05:33:57+0000] Collecting openai==1.12.0 (from -r requirements.txt (line 8))
+2026-02-04T05:34:30    [05:33:57+0000]   Downloading openai-1.12.0-py3-none-any.whl.metadata (18 kB)
+2026-02-04T05:34:30    [05:33:57+0000] Collecting sendgrid==6.11.0 (from -r requirements.txt (line 9))
+2026-02-04T05:34:30    [05:33:57+0000]   Downloading sendgrid-6.11.0-py3-none-any.whl.metadata (11 kB)
+2026-02-04T05:34:30    [05:33:57+0000] Collecting python-multipart==0.0.6 (from -r requirements.txt (line 10))
+2026-02-04T05:34:30    [05:33:57+0000]   Downloading python_multipart-0.0.6-py3-none-any.whl.metadata (2.5 kB)
+2026-02-04T05:34:30    [05:33:58+0000] Collecting aiohttp==3.9.1 (from -r requirements.txt (line 11))
+2026-02-04T05:34:30    [05:33:58+0000]   Downloading aiohttp-3.9.1-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (7.4 kB)
+2026-02-04T05:34:30    [05:33:58+0000] Collecting beautifulsoup4==4.12.3 (from -r requirements.txt (line 12))
+2026-02-04T05:34:30    [05:33:58+0000]   Downloading beautifulsoup4-4.12.3-py3-none-any.whl.metadata (3.8 kB)
+2026-02-04T05:34:30    [05:33:59+0000] Collecting lxml==5.1.0 (from -r requirements.txt (line 13))
+2026-02-04T05:34:30    [05:33:59+0000]   Downloading lxml-5.1.0-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (3.5 kB)
+2026-02-04T05:34:30    [05:33:59+0000] Collecting feedparser==6.0.10 (from -r requirements.txt (line 14))
+2026-02-04T05:34:30    [05:33:59+0000]   Downloading feedparser-6.0.10-py3-none-any.whl.metadata (2.3 kB)
+2026-02-04T05:34:30    [05:33:59+0000] Collecting pytest==7.4.3 (from -r requirements.txt (line 15))
+2026-02-04T05:34:30    [05:33:59+0000]   Downloading pytest-7.4.3-py3-none-any.whl.metadata (7.9 kB)
+2026-02-04T05:34:30    [05:33:59+0000] Collecting httpx==0.26.0 (from -r requirements.txt (line 16))
+2026-02-04T05:34:30    [05:33:59+0000]   Downloading httpx-0.26.0-py3-none-any.whl.metadata (7.6 kB)
+2026-02-04T05:34:30    [05:33:59+0000] Collecting email-validator==2.2.0 (from -r requirements.txt (line 17))
+2026-02-04T05:34:30    [05:33:59+0000]   Downloading email_validator-2.2.0-py3-none-any.whl.metadata (25 kB)
+2026-02-04T05:34:30    [05:33:59+0000] Collecting starlette<0.36.0,>=0.35.0 (from fastapi==0.109.0->-r requirements.txt (line 1))
+2026-02-04T05:34:30    [05:33:59+0000]   Downloading starlette-0.35.1-py3-none-any.whl.metadata (5.8 kB)
+2026-02-04T05:34:30    [05:33:59+0000] Collecting typing-extensions>=4.8.0 (from fastapi==0.109.0->-r requirements.txt (line 1))
+2026-02-04T05:34:30    [05:33:59+0000]   Downloading typing_extensions-4.15.0-py3-none-any.whl.metadata (3.3 kB)
+2026-02-04T05:34:30    [05:33:59+0000] Collecting click>=7.0 (from uvicorn==0.27.0->uvicorn[standard]==0.27.0->-r requirements.txt (line 2))
+2026-02-04T05:34:30    [05:33:59+0000]   Downloading click-8.3.1-py3-none-any.whl.metadata (2.6 kB)
+2026-02-04T05:34:30    [05:33:59+0000] Collecting h11>=0.8 (from uvicorn==0.27.0->uvicorn[standard]==0.27.0->-r requirements.txt (line 2))
+2026-02-04T05:34:30    [05:33:59+0000]   Downloading h11-0.16.0-py3-none-any.whl.metadata (8.3 kB)
+2026-02-04T05:34:30    [05:34:00+0000] Collecting greenlet!=0.4.17 (from sqlalchemy==2.0.25->-r requirements.txt (line 3))
+2026-02-04T05:34:30    [05:34:00+0000]   Downloading greenlet-3.3.1-cp311-cp311-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl.metadata (3.7 kB)
+2026-02-04T05:34:30    [05:34:00+0000] Collecting Mako (from alembic==1.13.1->-r requirements.txt (line 4))
+2026-02-04T05:34:30    [05:34:00+0000]   Downloading mako-1.3.10-py3-none-any.whl.metadata (2.9 kB)
+2026-02-04T05:34:30    [05:34:00+0000] Collecting annotated-types>=0.6.0 (from pydantic==2.10.5->-r requirements.txt (line 5))
+2026-02-04T05:34:30    [05:34:00+0000]   Downloading annotated_types-0.7.0-py3-none-any.whl.metadata (15 kB)
+2026-02-04T05:34:30    [05:34:01+0000] Collecting pydantic-core==2.27.2 (from pydantic==2.10.5->-r requirements.txt (line 5))
+2026-02-04T05:34:30    [05:34:01+0000]   Downloading pydantic_core-2.27.2-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (6.6 kB)
+2026-02-04T05:34:30    [05:34:01+0000] Collecting anyio<5,>=3.5.0 (from openai==1.12.0->-r requirements.txt (line 8))
+2026-02-04T05:34:30    [05:34:01+0000]   Downloading anyio-4.12.1-py3-none-any.whl.metadata (4.3 kB)
+2026-02-04T05:34:30    [05:34:01+0000] Collecting distro<2,>=1.7.0 (from openai==1.12.0->-r requirements.txt (line 8))
+2026-02-04T05:34:30    [05:34:01+0000]   Downloading distro-1.9.0-py3-none-any.whl.metadata (6.8 kB)
+2026-02-04T05:34:30    [05:34:01+0000] Collecting sniffio (from openai==1.12.0->-r requirements.txt (line 8))
+2026-02-04T05:34:30    [05:34:01+0000]   Downloading sniffio-1.3.1-py3-none-any.whl.metadata (3.9 kB)
+2026-02-04T05:34:30    [05:34:01+0000] Collecting tqdm>4 (from openai==1.12.0->-r requirements.txt (line 8))
+2026-02-04T05:34:31    [05:34:01+0000]   Downloading tqdm-4.67.3-py3-none-any.whl.metadata (57 kB)
+2026-02-04T05:34:31    [05:34:01+0000]      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 57.7/57.7 kB 3.0 MB/s eta 0:00:00
+2026-02-04T05:34:31    [05:34:01+0000] Collecting python-http-client>=3.2.1 (from sendgrid==6.11.0->-r requirements.txt (line 9))
+2026-02-04T05:34:31    [05:34:01+0000]   Downloading python_http_client-3.3.7-py3-none-any.whl.metadata (6.9 kB)
+2026-02-04T05:34:31    [05:34:01+0000] Collecting starkbank-ecdsa>=2.0.1 (from sendgrid==6.11.0->-r requirements.txt (line 9))
+2026-02-04T05:34:31    [05:34:01+0000]   Downloading starkbank-ecdsa-2.2.0.tar.gz (14 kB)
+2026-02-04T05:34:31    [05:34:01+0000]   Preparing metadata (setup.py): started
+2026-02-04T05:34:31    [05:34:02+0000]   Preparing metadata (setup.py): finished with status 'done'
+2026-02-04T05:34:31    [05:34:03+0000] Collecting attrs>=17.3.0 (from aiohttp==3.9.1->-r requirements.txt (line 11))
+2026-02-04T05:34:31    [05:34:03+0000]   Downloading attrs-25.4.0-py3-none-any.whl.metadata (10 kB)
+2026-02-04T05:34:31    [05:34:03+0000] Collecting multidict<7.0,>=4.5 (from aiohttp==3.9.1->-r requirements.txt (line 11))
+2026-02-04T05:34:31    [05:34:03+0000]   Downloading multidict-6.7.1-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (5.3 kB)
+2026-02-04T05:34:31    [05:34:03+0000] Collecting yarl<2.0,>=1.0 (from aiohttp==3.9.1->-r requirements.txt (line 11))
+2026-02-04T05:34:31    [05:34:03+0000]   Downloading yarl-1.22.0-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (75 kB)
+2026-02-04T05:34:31    [05:34:03+0000]      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 75.1/75.1 kB 4.1 MB/s eta 0:00:00
+2026-02-04T05:34:31    [05:34:04+0000] Collecting frozenlist>=1.1.1 (from aiohttp==3.9.1->-r requirements.txt (line 11))
+2026-02-04T05:34:31    [05:34:04+0000]   Downloading frozenlist-1.8.0-cp311-cp311-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl.metadata (20 kB)
+2026-02-04T05:34:31    [05:34:04+0000] Collecting aiosignal>=1.1.2 (from aiohttp==3.9.1->-r requirements.txt (line 11))
+2026-02-04T05:34:31    [05:34:04+0000]   Downloading aiosignal-1.4.0-py3-none-any.whl.metadata (3.7 kB)
+2026-02-04T05:34:31    [05:34:04+0000] Collecting soupsieve>1.2 (from beautifulsoup4==4.12.3->-r requirements.txt (line 12))
+2026-02-04T05:34:31    [05:34:04+0000]   Downloading soupsieve-2.8.3-py3-none-any.whl.metadata (4.6 kB)
+2026-02-04T05:34:31    [05:34:04+0000] Collecting sgmllib3k (from feedparser==6.0.10->-r requirements.txt (line 14))
+2026-02-04T05:34:31    [05:34:04+0000]   Downloading sgmllib3k-1.0.0.tar.gz (5.8 kB)
+2026-02-04T05:34:31    [05:34:04+0000]   Preparing metadata (setup.py): started
+2026-02-04T05:34:31    [05:34:04+0000]   Preparing metadata (setup.py): finished with status 'done'
+2026-02-04T05:34:31    [05:34:05+0000] Collecting iniconfig (from pytest==7.4.3->-r requirements.txt (line 15))
+2026-02-04T05:34:31    [05:34:05+0000]   Downloading iniconfig-2.3.0-py3-none-any.whl.metadata (2.5 kB)
+2026-02-04T05:34:31    [05:34:05+0000] Collecting packaging (from pytest==7.4.3->-r requirements.txt (line 15))
+2026-02-04T05:34:31    [05:34:05+0000]   Downloading packaging-26.0-py3-none-any.whl.metadata (3.3 kB)
+2026-02-04T05:34:31    [05:34:05+0000] Collecting pluggy<2.0,>=0.12 (from pytest==7.4.3->-r requirements.txt (line 15))
+2026-02-04T05:34:31    [05:34:05+0000]   Downloading pluggy-1.6.0-py3-none-any.whl.metadata (4.8 kB)
+2026-02-04T05:34:31    [05:34:05+0000] Collecting certifi (from httpx==0.26.0->-r requirements.txt (line 16))
+2026-02-04T05:34:31    [05:34:05+0000]   Downloading certifi-2026.1.4-py3-none-any.whl.metadata (2.5 kB)
+2026-02-04T05:34:31    [05:34:05+0000] Collecting httpcore==1.* (from httpx==0.26.0->-r requirements.txt (line 16))
+2026-02-04T05:34:31    [05:34:05+0000]   Downloading httpcore-1.0.9-py3-none-any.whl.metadata (21 kB)
+2026-02-04T05:34:31    [05:34:05+0000] Collecting idna (from httpx==0.26.0->-r requirements.txt (line 16))
+2026-02-04T05:34:31    [05:34:05+0000]   Downloading idna-3.11-py3-none-any.whl.metadata (8.4 kB)
+2026-02-04T05:34:31    [05:34:05+0000] Collecting dnspython>=2.0.0 (from email-validator==2.2.0->-r requirements.txt (line 17))
+2026-02-04T05:34:31    [05:34:05+0000]   Downloading dnspython-2.8.0-py3-none-any.whl.metadata (5.7 kB)
+2026-02-04T05:34:31    [05:34:05+0000] Collecting httptools>=0.5.0 (from uvicorn[standard]==0.27.0->-r requirements.txt (line 2))
+2026-02-04T05:34:31    [05:34:05+0000]   Downloading httptools-0.7.1-cp311-cp311-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl.metadata (3.5 kB)
+2026-02-04T05:34:31    [05:34:05+0000] Collecting pyyaml>=5.1 (from uvicorn[standard]==0.27.0->-r requirements.txt (line 2))
+2026-02-04T05:34:31    [05:34:05+0000]   Downloading pyyaml-6.0.3-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (2.4 kB)
+2026-02-04T05:34:31    [05:34:05+0000] Collecting uvloop!=0.15.0,!=0.15.1,>=0.14.0 (from uvicorn[standard]==0.27.0->-r requirements.txt (line 2))
+2026-02-04T05:34:31    [05:34:05+0000]   Downloading uvloop-0.22.1-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (4.9 kB)
+2026-02-04T05:34:31    [05:34:05+0000] Collecting watchfiles>=0.13 (from uvicorn[standard]==0.27.0->-r requirements.txt (line 2))
+2026-02-04T05:34:31    [05:34:05+0000]   Downloading watchfiles-1.1.1-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (4.9 kB)
+2026-02-04T05:34:31    [05:34:06+0000] Collecting websockets>=10.4 (from uvicorn[standard]==0.27.0->-r requirements.txt (line 2))
+2026-02-04T05:34:31    [05:34:06+0000]   Downloading websockets-16.0-cp311-cp311-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl.metadata (6.8 kB)
+2026-02-04T05:34:31    [05:34:06+0000] Collecting propcache>=0.2.1 (from yarl<2.0,>=1.0->aiohttp==3.9.1->-r requirements.txt (line 11))
+2026-02-04T05:34:31    [05:34:06+0000]   Downloading propcache-0.4.1-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (13 kB)
+2026-02-04T05:34:31    [05:34:07+0000] Collecting MarkupSafe>=0.9.2 (from Mako->alembic==1.13.1->-r requirements.txt (line 4))
+2026-02-04T05:34:31    [05:34:07+0000]   Downloading markupsafe-3.0.3-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (2.7 kB)
+2026-02-04T05:34:31    [05:34:07+0000] Downloading fastapi-0.109.0-py3-none-any.whl (92 kB)
+2026-02-04T05:34:31    [05:34:07+0000]    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 92.0/92.0 kB 4.9 MB/s eta 0:00:00
+2026-02-04T05:34:31    [05:34:07+0000] Downloading uvicorn-0.27.0-py3-none-any.whl (60 kB)
+2026-02-04T05:34:31    [05:34:07+0000]    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 60.6/60.6 kB 3.3 MB/s eta 0:00:00
+2026-02-04T05:34:31    [05:34:07+0000] Downloading SQLAlchemy-2.0.25-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (3.2 MB)
+2026-02-04T05:34:31    [05:34:07+0000]    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 3.2/3.2 MB 44.6 MB/s eta 0:00:00
+2026-02-04T05:34:31    [05:34:07+0000] Downloading alembic-1.13.1-py3-none-any.whl (233 kB)
+2026-02-04T05:34:31    [05:34:07+0000]    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 233.4/233.4 kB 9.9 MB/s eta 0:00:00
+2026-02-04T05:34:31    [05:34:07+0000] Downloading pydantic-2.10.5-py3-none-any.whl (431 kB)
+2026-02-04T05:34:31    [05:34:07+0000]    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 431.4/431.4 kB 19.7 MB/s eta 0:00:00
+2026-02-04T05:34:31    [05:34:07+0000] Downloading pydantic_settings-2.7.1-py3-none-any.whl (29 kB)
+2026-02-04T05:34:31    [05:34:07+0000] Downloading python_dotenv-1.0.0-py3-none-any.whl (19 kB)
+2026-02-04T05:34:31    [05:34:07+0000] Downloading openai-1.12.0-py3-none-any.whl (226 kB)
+2026-02-04T05:34:31    [05:34:07+0000]    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 226.7/226.7 kB 12.3 MB/s eta 0:00:00
+2026-02-04T05:34:31    [05:34:07+0000] Downloading sendgrid-6.11.0-py3-none-any.whl (101 kB)
+2026-02-04T05:34:31    [05:34:07+0000]    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━���━━━━━━ 101.9/101.9 kB 5.4 MB/s eta 0:00:00
+2026-02-04T05:34:31    [05:34:07+0000] Downloading python_multipart-0.0.6-py3-none-any.whl (45 kB)
+2026-02-04T05:34:31    [05:34:07+0000]    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 45.7/45.7 kB 2.4 MB/s eta 0:00:00
+2026-02-04T05:34:31    [05:34:07+0000] Downloading aiohttp-3.9.1-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (1.3 MB)
+2026-02-04T05:34:31    [05:34:08+0000]    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.3/1.3 MB 27.8 MB/s eta 0:00:00
+2026-02-04T05:34:31    [05:34:08+0000] Downloading beautifulsoup4-4.12.3-py3-none-any.whl (147 kB)
+2026-02-04T05:34:31    [05:34:08+0000]    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 147.9/147.9 kB 7.9 MB/s eta 0:00:00
+2026-02-04T05:34:31    [05:34:08+0000] Downloading lxml-5.1.0-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (8.1 MB)
+2026-02-04T05:34:31    [05:34:09+0000]    ━━━━━━━━━━━━━━━━━━��━━━━━━━━━━━━━━━━━━━━━ 8.1/8.1 MB 5.8 MB/s eta 0:00:00
+2026-02-04T05:34:32    [05:34:09+0000] Downloading feedparser-6.0.10-py3-none-any.whl (81 kB)
+2026-02-04T05:34:32    [05:34:09+0000]    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 81.1/81.1 kB 2.9 MB/s eta 0:00:00
+2026-02-04T05:34:32    [05:34:09+0000] Downloading pytest-7.4.3-py3-none-any.whl (325 kB)
+2026-02-04T05:34:32    [05:34:09+0000]    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 325.1/325.1 kB 16.3 MB/s eta 0:00:00
+2026-02-04T05:34:32    [05:34:09+0000] Downloading httpx-0.26.0-py3-none-any.whl (75 kB)
+2026-02-04T05:34:32    [05:34:09+0000]    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 75.9/75.9 kB 4.0 MB/s eta 0:00:00
+2026-02-04T05:34:32    [05:34:09+0000] Downloading email_validator-2.2.0-py3-none-any.whl (33 kB)
+2026-02-04T05:34:32    [05:34:09+0000] Downloading httpcore-1.0.9-py3-none-any.whl (78 kB)
+2026-02-04T05:34:32    [05:34:09+0000]    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 78.8/78.8 kB 4.0 MB/s eta 0:00:00
+2026-02-04T05:34:32    [05:34:09+0000] Downloading pydantic_core-2.27.2-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (2.0 MB)
+2026-02-04T05:34:32    [05:34:09+0000]    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 2.0/2.0 MB 22.8 MB/s eta 0:00:00
+2026-02-04T05:34:32    [05:34:09+0000] Downloading aiosignal-1.4.0-py3-none-any.whl (7.5 kB)
+2026-02-04T05:34:32    [05:34:09+0000] Downloading annotated_types-0.7.0-py3-none-any.whl (13 kB)
+2026-02-04T05:34:32    [05:34:09+0000] Downloading anyio-4.12.1-py3-none-any.whl (113 kB)
+2026-02-04T05:34:32    [05:34:09+0000]    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 113.6/113.6 kB 5.5 MB/s eta 0:00:00
+2026-02-04T05:34:32    [05:34:09+0000] Downloading attrs-25.4.0-py3-none-any.whl (67 kB)
+2026-02-04T05:34:32    [05:34:09+0000]    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 67.6/67.6 kB 3.0 MB/s eta 0:00:00
+2026-02-04T05:34:32    [05:34:09+0000] Downloading click-8.3.1-py3-none-any.whl (108 kB)
+2026-02-04T05:34:32    [05:34:09+0000]    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 108.3/108.3 kB 6.4 MB/s eta 0:00:00
+2026-02-04T05:34:32    [05:34:09+0000] Downloading distro-1.9.0-py3-none-any.whl (20 kB)
+2026-02-04T05:34:32    [05:34:09+0000] Downloading dnspython-2.8.0-py3-none-any.whl (331 kB)
+2026-02-04T05:34:32    [05:34:09+0000]    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 331.1/331.1 kB 17.4 MB/s eta 0:00:00
+2026-02-04T05:34:32    [05:34:09+0000] Downloading frozenlist-1.8.0-cp311-cp311-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl (231 kB)
+2026-02-04T05:34:32    [05:34:10+0000]    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 231.1/231.1 kB 12.9 MB/s eta 0:00:00
+2026-02-04T05:34:32    [05:34:10+0000] Downloading greenlet-3.3.1-cp311-cp311-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl (590 kB)
+2026-02-04T05:34:32    [05:34:10+0000]    ━━━━━��━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 590.3/590.3 kB 23.2 MB/s eta 0:00:00
+2026-02-04T05:34:32    [05:34:10+0000] Downloading h11-0.16.0-py3-none-any.whl (37 kB)
+2026-02-04T05:34:32    [05:34:10+0000] Downloading httptools-0.7.1-cp311-cp311-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl (456 kB)
+2026-02-04T05:34:32    [05:34:10+0000]    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 456.6/456.6 kB 17.7 MB/s eta 0:00:00
+2026-02-04T05:34:32    [05:34:10+0000] Downloading idna-3.11-py3-none-any.whl (71 kB)
+2026-02-04T05:34:32    [05:34:10+0000]    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 71.0/71.0 kB 3.3 MB/s eta 0:00:00
+2026-02-04T05:34:32    [05:34:10+0000] Downloading multidict-6.7.1-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (246 kB)
+2026-02-04T05:34:32    [05:34:10+0000]    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 246.3/246.3 kB 12.2 MB/s eta 0:00:00
+2026-02-04T05:34:32    [05:34:10+0000] Downloading pluggy-1.6.0-py3-none-any.whl (20 kB)
+2026-02-04T05:34:32    [05:34:10+0000] Downloading python_http_client-3.3.7-py3-none-any.whl (8.4 kB)
+2026-02-04T05:34:32    [05:34:10+0000] Downloading pyyaml-6.0.3-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (806 kB)
+2026-02-04T05:34:32    [05:34:10+0000]    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 806.6/806.6 kB 16.6 MB/s eta 0:00:00
+2026-02-04T05:34:32    [05:34:10+0000] Downloading soupsieve-2.8.3-py3-none-any.whl (37 kB)
+2026-02-04T05:34:32    [05:34:10+0000] Downloading starlette-0.35.1-py3-none-any.whl (71 kB)
+2026-02-04T05:34:32    [05:34:10+0000]    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 71.1/71.1 kB 3.8 MB/s eta 0:00:00
+2026-02-04T05:34:32    [05:34:10+0000] Downloading tqdm-4.67.3-py3-none-any.whl (78 kB)
+2026-02-04T05:34:32    [05:34:10+0000]    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 78.4/78.4 kB 4.1 MB/s eta 0:00:00
+2026-02-04T05:34:32    [05:34:10+0000] Downloading typing_extensions-4.15.0-py3-none-any.whl (44 kB)
+2026-02-04T05:34:32    [05:34:10+0000]    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 44.6/44.6 kB 2.1 MB/s eta 0:00:00
+2026-02-04T05:34:32    [05:34:10+0000] Downloading uvloop-0.22.1-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (3.8 MB)
+2026-02-04T05:34:32    [05:34:10+0000]    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 3.8/3.8 MB 23.9 MB/s eta 0:00:00
+2026-02-04T05:34:32    [05:34:10+0000] Downloading watchfiles-1.1.1-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (456 kB)
+2026-02-04T05:34:32    [05:34:10+0000]    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 456.1/456.1 kB 18.6 MB/s eta 0:00:00
+2026-02-04T05:34:32    [05:34:10+0000] Downloading websockets-16.0-cp311-cp311-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl (184 kB)
+2026-02-04T05:34:32    [05:34:10+0000]    ━━━��━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 184.6/184.6 kB 10.3 MB/s eta 0:00:00
+2026-02-04T05:34:32    [05:34:10+0000] Downloading yarl-1.22.0-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (365 kB)
+2026-02-04T05:34:32    [05:34:10+0000]    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 365.8/365.8 kB 9.6 MB/s eta 0:00:00
+2026-02-04T05:34:32    [05:34:10+0000] Downloading certifi-2026.1.4-py3-none-any.whl (152 kB)
+2026-02-04T05:34:32    [05:34:10+0000]    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 152.9/152.9 kB 8.1 MB/s eta 0:00:00
+2026-02-04T05:34:32    [05:34:10+0000] Downloading iniconfig-2.3.0-py3-none-any.whl (7.5 kB)
+2026-02-04T05:34:32    [05:34:10+0000] Downloading mako-1.3.10-py3-none-any.whl (78 kB)
+2026-02-04T05:34:32    [05:34:10+0000]    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 78.5/78.5 kB 4.6 MB/s eta 0:00:00
+2026-02-04T05:34:32    [05:34:10+0000] Downloading packaging-26.0-py3-none-any.whl (74 kB)
+2026-02-04T05:34:32    [05:34:10+0000]    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 74.4/74.4 kB 3.1 MB/s eta 0:00:00
+2026-02-04T05:34:32    [05:34:10+0000] Downloading sniffio-1.3.1-py3-none-any.whl (10 kB)
+2026-02-04T05:34:32    [05:34:10+0000] Downloading markupsafe-3.0.3-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (22 kB)
+2026-02-04T05:34:32    [05:34:10+0000] Downloading propcache-0.4.1-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (210 kB)
+2026-02-04T05:34:32    [05:34:10+0000]    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 210.0/210.0 kB 11.7 MB/s eta 0:00:00
+2026-02-04T05:34:32    [05:34:10+0000] Building wheels for collected packages: starkbank-ecdsa, sgmllib3k
+2026-02-04T05:34:32    [05:34:10+0000]   Building wheel for starkbank-ecdsa (setup.py): started
+2026-02-04T05:34:32    [05:34:12+0000]   Building wheel for starkbank-ecdsa (setup.py): finished with status 'done'
+2026-02-04T05:34:32    [05:34:12+0000]   Created wheel for starkbank-ecdsa: filename=starkbank_ecdsa-2.2.0-py3-none-any.whl size=16048 sha256=3376b7b7ffe0a27e0e0fd0f7ce89b66811fc0a13a589412abefd91ddbf51bba8
+2026-02-04T05:34:32    [05:34:12+0000]   Stored in directory: /usr/local/share/pip-cache/wheels/af/6c/c8/3a941332ae93d4748d5b4107d70ed22b4e6ff6ac1e225c5c95
+2026-02-04T05:34:32    [05:34:12+0000]   Building wheel for sgmllib3k (setup.py): started
+2026-02-04T05:34:32    [05:34:12+0000]   Building wheel for sgmllib3k (setup.py): finished with status 'done'
+2026-02-04T05:34:32    [05:34:12+0000]   Created wheel for sgmllib3k: filename=sgmllib3k-1.0.0-py3-none-any.whl size=6090 sha256=0ad291b9742e9af733754e8950e05e8b192911b01ece9c29be66bc4347d2bdc2
+2026-02-04T05:34:32    [05:34:12+0000]   Stored in directory: /usr/local/share/pip-cache/wheels/3b/25/2a/105d6a15df6914f4d15047691c6c28f9052cc1173e40285d03
+2026-02-04T05:34:32    [05:34:12+0000] Successfully built starkbank-ecdsa sgmllib3k
+2026-02-04T05:34:32    [05:34:12+0000] Installing collected packages: starkbank-ecdsa, sgmllib3k, websockets, uvloop, typing-extensions, tqdm, soupsieve, sniffio, pyyaml, python-multipart, python-http-client, python-dotenv, propcache, pluggy, packaging, multidict, MarkupSafe, lxml, iniconfig, idna, httptools, h11, greenlet, frozenlist, feedparser, dnspython, distro, click, certifi, attrs, annotated-types, yarl, uvicorn, sqlalchemy, sendgrid, pytest, pydantic-core, Mako, httpcore, email-validator, beautifulsoup4, anyio, aiosignal, watchfiles, starlette, pydantic, httpx, alembic, aiohttp, pydantic-settings, openai, fastapi
+2026-02-04T05:34:32    [05:34:28+0000] Successfully installed Mako-1.3.10 MarkupSafe-3.0.3 aiohttp-3.9.1 aiosignal-1.4.0 alembic-1.13.1 annotated-types-0.7.0 anyio-4.12.1 attrs-25.4.0 beautifulsoup4-4.12.3 certifi-2026.1.4 click-8.3.1 distro-1.9.0 dnspython-2.8.0 email-validator-2.2.0 fastapi-0.109.0 feedparser-6.0.10 frozenlist-1.8.0 greenlet-3.3.1 h11-0.16.0 httpcore-1.0.9 httptools-0.7.1 httpx-0.26.0 idna-3.11 iniconfig-2.3.0 lxml-5.1.0 multidict-6.7.1 openai-1.12.0 packaging-26.0 pluggy-1.6.0 propcache-0.4.1 pydantic-2.10.5 pydantic-core-2.27.2 pydantic-settings-2.7.1 pytest-7.4.3 python-dotenv-1.0.0 python-http-client-3.3.7 python-multipart-0.0.6 pyyaml-6.0.3 sendgrid-6.11.0 sgmllib3k-1.0.0 sniffio-1.3.1 soupsieve-2.8.3 sqlalchemy-2.0.25 starkbank-ecdsa-2.2.0 starlette-0.35.1 tqdm-4.67.3 typing-extensions-4.15.0 uvicorn-0.27.0 uvloop-0.22.1 watchfiles-1.1.1 websockets-16.0 yarl-1.22.0
+2026-02-04T05:34:33    
+2026-02-04T05:34:33    [notice] A new release of pip is available: 24.0 -> 26.0
+2026-02-04T05:34:33    [notice] To update, run: pip install --upgrade pip
+2026-02-04T05:34:33    Not a vso image, so not writing build commands
+2026-02-04T05:34:33    Preparing output...
+2026-02-04T05:34:33    
+2026-02-04T05:34:33    Copying files to destination directory '/tmp/_preCompressedDestinationDir'...
+2026-02-04T05:34:38    Done in 9 sec(s).
+2026-02-04T05:34:38    Compressing content of directory '/tmp/_preCompressedDestinationDir'...
+2026-02-04T05:34:46    Copied the compressed output to '/home/site/wwwroot'
+2026-02-04T05:34:46    
+2026-02-04T05:34:46    Removing existing manifest file
+2026-02-04T05:34:46    Creating a manifest file...
+2026-02-04T05:34:46    Manifest file created.
+2026-02-04T05:34:46    Copying .ostype to manifest output directory.
+2026-02-04T05:34:46    
+2026-02-04T05:34:46    Done in 80 sec(s).
+2026-02-04T05:34:47  Running post deployment command(s)...
+2026-02-04T05:34:47  
+2026-02-04T05:34:48  Generating summary of Oryx build
+2026-02-04T05:34:48  Parsing the build logs
+2026-02-04T05:34:48  Found 0 issue(s)
+2026-02-04T05:34:48  
+2026-02-04T05:34:48  Build Summary :
+2026-02-04T05:34:48  ===============
+2026-02-04T05:34:48  Errors (0)
+2026-02-04T05:34:49  Warnings (0)
+2026-02-04T05:34:49  
+2026-02-04T05:34:49  Triggering container recycle for OneDeploy by adding/updating restartTrigger.txt to the site root path
+2026-02-04T05:34:49  Deployment successful. deployer = OneDeploy deploymentPath = OneDeploy
