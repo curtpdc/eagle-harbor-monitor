@@ -1,0 +1,87 @@
+[
+  {
+    "name": "SCM_DO_BUILD_DURING_DEPLOYMENT",
+    "slotSetting": false,
+    "value": "true"
+  },
+  {
+    "name": "WEBSITES_PORT",
+    "slotSetting": false,
+    "value": "8000"
+  },
+  {
+    "name": "ENABLE_ORYX_BUILD",
+    "slotSetting": false,
+    "value": "true"
+  },
+  {
+    "name": "WEBSITE_HTTPLOGGING_RETENTION_DAYS",
+    "slotSetting": false,
+    "value": "3"
+  },
+  {
+    "name": "DOCKER_REGISTRY_SERVER_URL",
+    "slotSetting": false,
+    "value": "https://eagleharborregistry.azurecr.io"
+  },
+  {
+    "name": "DOCKER_REGISTRY_SERVER_USERNAME",
+    "slotSetting": false,
+    "value": "eagleharborregistry"
+  },
+  {
+    "name": "DOCKER_REGISTRY_SERVER_PASSWORD",
+    "slotSetting": false,
+    "value": "***REDACTED***"
+  },
+  {
+    "name": "PYTHONPATH",
+    "slotSetting": false,
+    "value": "/home/site/wwwroot"
+  },
+  {
+    "name": "DATABASE_URL",
+    "slotSetting": false,
+    "value": "sqlite:////home/data/eagle_harbor.db"
+  },
+  {
+    "name": "AZURE_OPENAI_ENDPOINT",
+    "slotSetting": false,
+    "value": "https://xigusa-openai.openai.azure.com/"
+  },
+  {
+    "name": "AZURE_OPENAI_API_KEY",
+    "slotSetting": false,
+    "value": "***REDACTED***"
+  },
+  {
+    "name": "AZURE_OPENAI_DEPLOYMENT",
+    "slotSetting": false,
+    "value": "gpt-4o-mini"
+  },
+  {
+    "name": "AZURE_COMM_CONNECTION_STRING",
+    "slotSetting": false,
+    "value": "***REDACTED***"
+  },
+  {
+    "name": "FROM_EMAIL",
+    "slotSetting": false,
+    "value": "DoNotReply@59b6bc9f-ac74-4afa-9428-bac5c4976a23.azurecomm.net"
+  },
+  {
+    "name": "APP_NAME",
+    "slotSetting": false,
+    "value": "Eagle Harbor Data Center Monitor"
+  },
+  {
+    "name": "APP_URL",
+    "slotSetting": false,
+    "value": "https://eagleharbormonitor.org"
+  },
+  {
+    "name": "DEBUG",
+    "slotSetting": false,
+    "value": "False"
+  }
+]
