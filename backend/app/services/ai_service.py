@@ -27,14 +27,20 @@ class AIService:
     def __init__(self):
         # Azure OpenAI client (optional for local dev)
         if settings.AZURE_OPENAI_API_KEY:
-            self.client = AzureOpenAI(
-                api_key=settings.AZURE_OPENAI_API_KEY,
-                api_version="2024-02-15-preview",
-                azure_endpoint=settings.AZURE_OPENAI_ENDPOINT,
-                timeout=30.0,  # 30 second timeout for API calls
-                max_retries=2  # Retry failed requests
-            )
-            self.enabled = True
+            try:
+                self.client = AzureOpenAI(
+                    api_key=settings.AZURE_OPENAI_API_KEY,
+                    api_version="2024-08-01-preview",  # Updated for AI Foundry
+                    azure_endpoint=settings.AZURE_OPENAI_ENDPOINT,
+                    timeout=30.0,  # 30 second timeout for API calls
+                    max_retries=2  # Retry failed requests
+                )
+                self.enabled = True
+                logger.info("AI service initialized with Azure AI Foundry")
+            except Exception as e:
+                logger.error(f"Failed to initialize Azure OpenAI client: {e}")
+                self.client = None
+                self.enabled = False
         else:
             self.client = None
             self.enabled = False
@@ -133,40 +139,52 @@ Focus on:
                 'confidence': 0.0
             }
 
-        # If no articles, provide general information
+        # If no articles, provide general information using GPT-4o knowledge
         if not articles or len(articles) == 0:
             try:
-                prompt = f"""You are an expert on data center policy in Prince George's County and Charles County, Maryland.
+                prompt = f"""You are an expert on data center policy and development in Prince George's County and Charles County, Maryland.
 
 The user asks: {question}
 
-Provide a helpful, accurate answer based on your knowledge of:
-- Prince George's County data center moratorium (enacted January 26, 2021)
-- CR-98-2025 and Executive Order 42-2025 creating a Data Center Task Force
-- Planning Board's review of zoning amendments
-- Community concerns about environmental impacts
-- Current status of AR and RE zoning changes
+Provide a comprehensive, factual answer based on your general knowledge of:
+- Data center development in Maryland and Prince George's County
+- Environmental concerns (water usage, power consumption, heat islands)
+- Zoning regulations and land use policy
+- Community impact and infrastructure requirements
+- Recent data center policy trends in the Mid-Atlantic region
 
-If you don't know specific recent updates, explain what you know and recommend checking official county sources."""
+Be specific and informative. If the question relates to very recent events (last few weeks) that you may not have data for, acknowledge that and provide relevant general context about the topic.
 
+Important: DO NOT say you're "setting up" or that you need more information. Answer the question with your existing knowledge."""
+
+                logger.info(f"Answering question without articles using GPT-4o: {question}")
+                
                 response = self.client.chat.completions.create(
                     model=settings.AZURE_OPENAI_DEPLOYMENT,
                     messages=[
-                        {"role": "system", "content": "You are an expert on data center policy in Prince George's County and Charles County, Maryland. Provide clear, factual answers."},
+                        {"role": "system", "content": "You are an expert on data center policy in Prince George's County and Charles County, Maryland. Provide detailed, factual answers using your training data."},
                         {"role": "user", "content": prompt}
                     ],
                     temperature=0.7,
                     max_tokens=2048
                 )
 
+                answer = response.choices[0].message.content
+                logger.info(f"GPT-4o answered successfully: {answer[:100]}...")
+                
                 return {
-                    'answer': response.choices[0].message.content,
+                    'answer': answer,
                     'sources': [],
-                    'confidence': 0.7
+                    'confidence': 0.6
                 }
             except Exception as e:
+                logger.error(f"Error calling Azure OpenAI: {e}")
+                logger.error(f"Endpoint: {settings.AZURE_OPENAI_ENDPOINT}")
+                logger.error(f"Deployment: {settings.AZURE_OPENAI_DEPLOYMENT}")
+                
+                # Return a helpful error message
                 return {
-                    'answer': f"I'm currently setting up my knowledge base. Please try again soon. In the meantime, you can check the Prince George's County Planning Board website for official updates on data center developments.",
+                    'answer': f"I'm having trouble connecting to the AI service right now. Error: {str(e)}\n\nFor immediate information, please visit the Prince George's County Planning Board website at https://pgccouncil.us/",
                     'sources': [],
                     'confidence': 0.0
                 }
