@@ -25,8 +25,8 @@ $dbPassword = "EagleHarbor2026!"
 
 az postgres flexible-server create `
     --name eagle-harbor-db `
-    --resource-group xigusa-webapp `
-    --location eastus2 `
+    --resource-group eagleharbor `
+    --location eastus `
     --admin-user adminuser `
     --admin-password $dbPassword `
     --sku-name Standard_B1ms `
@@ -42,7 +42,7 @@ Write-Host ""
 Write-Host "Step 2: Creating database..." -ForegroundColor Yellow
 
 az postgres flexible-server db create `
-    --resource-group xigusa-webapp `
+    --resource-group eagleharbor `
     --server-name eagle-harbor-db `
     --database-name eagle_harbor_monitor
 
@@ -54,7 +54,7 @@ Write-Host "Step 3: Configuring firewall rules..." -ForegroundColor Yellow
 
 # Allow Azure services
 az postgres flexible-server firewall-rule create `
-    --resource-group xigusa-webapp `
+    --resource-group eagleharbor `
     --name eagle-harbor-db `
     --rule-name AllowAzureServices `
     --start-ip-address 0.0.0.0 `
@@ -63,7 +63,7 @@ az postgres flexible-server firewall-rule create `
 # Allow your current IP
 $myIp = (Invoke-WebRequest -Uri "https://api.ipify.org" -UseBasicParsing).Content
 az postgres flexible-server firewall-rule create `
-    --resource-group xigusa-webapp `
+    --resource-group eagleharbor `
     --name eagle-harbor-db `
     --rule-name AllowMyIP `
     --start-ip-address $myIp `
@@ -102,14 +102,14 @@ Write-Host "Step 5: Updating application settings..." -ForegroundColor Yellow
 
 # Update backend
 az webapp config appsettings set `
-    --resource-group xigusa-webapp `
-    --name eagle-harbor-api `
+    --resource-group eagleharbor `
+    --name eagleharbor-api `
     --settings DATABASE_URL=$connString
 
 # Update functions
 az functionapp config appsettings set `
-    --resource-group xigusa-webapp `
-    --name eagle-harbor-functions `
+    --resource-group eagleharbor `
+    --name eagleharbor-scrapers `
     --settings DATABASE_URL=$connString
 
 Write-Host "✓ Applications updated" -ForegroundColor Green
@@ -131,5 +131,5 @@ Write-Host $connString
 Write-Host ""
 Write-Host "✓ Backend and Functions have been updated to use PostgreSQL" -ForegroundColor Green
 Write-Host "✓ Restart your apps for changes to take effect:" -ForegroundColor Yellow
-Write-Host "  az webapp restart --resource-group xigusa-webapp --name eagle-harbor-api"
-Write-Host "  az functionapp restart --resource-group xigusa-webapp --name eagle-harbor-functions"
+Write-Host "  az webapp restart --resource-group eagleharbor --name eagleharbor-api"
+Write-Host "  az functionapp restart --resource-group eagleharbor --name eagleharbor-scrapers"
