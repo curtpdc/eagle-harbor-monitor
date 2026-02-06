@@ -19,7 +19,7 @@ class Settings(BaseSettings):
     
     # Azure Communication Services Email (optional for local dev)
     AZURE_COMM_CONNECTION_STRING: Optional[str] = None
-    FROM_EMAIL: str = "alerts@eagleharbormonitor.org"
+    FROM_EMAIL: str = "DoNotReply@59b6bc9f-ac74-4afa-9428-bac5c4976a23.azurecomm.net"
     
     # Application
     APP_NAME: str = "Eagle Harbor Data Center Monitor"
