@@ -4,8 +4,5 @@
   },
   "platform": {
     "apiRuntime": "node:18"
-  },
-  "environmentVariables": {
-    "NEXT_PUBLIC_API_URL": "https://eagleharbor-api.azurewebsites.net/api"
   }
 }
