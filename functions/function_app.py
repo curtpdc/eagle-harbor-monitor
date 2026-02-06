@@ -242,3 +242,131 @@ Focus on data centers, zoning, AR/RE zones, planning board actions."""
     
     except Exception as e:
         logging.error(f'Article analyzer error: {str(e)}')
+
+
+@app.function_name(name="HistoricalScan")
+@app.route(route="historical-scan", methods=["POST", "GET"], auth_level=func.AuthLevel.ANONYMOUS)
+def historical_scan(req: func.HttpRequest) -> func.HttpResponse:
+    """
+    One-time historical scan to populate knowledge base with past 180 days of articles
+    Trigger via: GET https://<function-app>.azurewebsites.net/api/historical-scan?days=180
+    """
+    
+    logging.info('Historical scan triggered')
+    
+    try:
+        # Get days parameter (default 180)
+        days_param = req.params.get('days', '180')
+        days_back = int(days_param)
+        
+        if days_back > 365:
+            return func.HttpResponse(
+                "Maximum 365 days allowed",
+                status_code=400
+            )
+        
+        from datetime import datetime, timedelta
+        from sqlalchemy import text
+        
+        start_date = datetime.now() - timedelta(days=days_back)
+        articles_found = 0
+        
+        # RSS Feeds to scan
+        rss_feeds = [
+            ("https://www.marylandmatters.org/feed/", "Maryland Matters"),
+            ("https://wtop.com/feed/", "WTOP News"),
+            ("https://feeds.washingtonpost.com/rss/local", "Washington Post"),
+        ]
+        
+        keywords = [
+            'data center', 'datacenter', 'prince george', 'eagle harbor',
+            'chalk point', 'CR-98-2025', 'task force', 'zoning',
+            'county council', 'planning board', 'AR zone', 'RE zone'
+        ]
+        
+        db = SessionLocal()
+        
+        for feed_url, source in rss_feeds:
+            try:
+                feed = feedparser.parse(feed_url)
+                
+                for entry in feed.entries[:100]:  # Scan up to 100 entries per feed
+                    try:
+                        # Check publication date
+                        pub_date = None
+                        if hasattr(entry, 'published_parsed') and entry.published_parsed:
+                            pub_date = datetime(*entry.published_parsed[:6])
+                        
+                        if pub_date and pub_date < start_date:
+                            continue
+                        
+                        title = entry.get('title', '')
+                        url = entry.get('link', '')
+                        summary = entry.get('summary', entry.get('description', ''))
+                        
+                        content_text = f"{title} {summary}".lower()
+                        if not any(kw.lower() in content_text for kw in keywords):
+                            continue
+                        
+                        # Check if exists
+                        existing = db.execute(
+                            text("SELECT id FROM articles WHERE url = :url"),
+                            {"url": url}
+                        ).fetchone()
+                        
+                        if existing:
+                            continue
+                        
+                        # Insert new article
+                        db.execute(
+                            text("""
+                                INSERT INTO articles 
+                                (title, url, content, source, discovered_date, published_date, analyzed)
+                                VALUES (:title, :url, :content, :source, :discovered, :published, FALSE)
+                            """),
+                            {
+                                "title": title,
+                                "url": url,
+                                "content": summary,
+                                "source": source,
+                                "discovered": datetime.now(),
+                                "published": pub_date or datetime.now()
+                            }
+                        )
+                        articles_found += 1
+                        logging.info(f"Historical: {title[:60]}")
+                    
+                    except Exception as e:
+                        logging.error(f"Entry error: {e}")
+                        continue
+            
+            except Exception as e:
+                logging.error(f"Feed error for {source}: {e}")
+                continue
+        
+        db.commit()
+        db.close()
+        
+        result = {
+            "success": True,
+            "articles_found": articles_found,
+            "days_scanned": days_back,
+            "date_range": f"{start_date.date()} to {datetime.now().date()}",
+            "note": "ArticleAnalyzer will process these articles automatically"
+        }
+        
+        logging.info(f'Historical scan complete: {articles_found} articles')
+        
+        return func.HttpResponse(
+            json.dumps(result),
+            mimetype="application/json",
+            status_code=200
+        )
+    
+    except Exception as e:
+        logging.error(f'Historical scan error: {str(e)}')
+        return func.HttpResponse(
+            json.dumps({"error": str(e)}),
+            mimetype="application/json",
+            status_code=500
+        )
