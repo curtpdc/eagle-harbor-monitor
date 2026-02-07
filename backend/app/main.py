@@ -4,9 +4,46 @@ from app.api.routes import router
 from app.database import engine, Base
 from app.config import settings
 import app.models  # noqa: F401 — register all ORM models with Base
+import logging
+
+logger = logging.getLogger(__name__)
 
 # create_all is idempotent — creates any missing tables without affecting existing ones
 Base.metadata.create_all(bind=engine)
+
+# SQLite doesn't support ALTER TABLE via create_all, so add missing columns manually
+def _migrate_sqlite():
+    """Add any missing columns to existing SQLite tables."""
+    if "sqlite" not in str(engine.url):
+        return
+    import sqlite3
+    db_path = str(engine.url).replace("sqlite:///", "")
+    try:
+        conn = sqlite3.connect(db_path)
+        cursor = conn.cursor()
+        # Get existing columns for the articles table
+        cursor.execute("PRAGMA table_info(articles)")
+        existing_cols = {row[1] for row in cursor.fetchall()}
+        
+        migrations = {
+            "articles": {
+                "relevance_score": "INTEGER",
+                "county": "VARCHAR(100)",
+                "event_date": "DATETIME",
+            },
+        }
+        for table, columns in migrations.items():
+            for col_name, col_type in columns.items():
+                if col_name not in existing_cols:
+                    sql = f"ALTER TABLE {table} ADD COLUMN {col_name} {col_type}"
+                    cursor.execute(sql)
+                    logger.info("Migration: added column %s.%s", table, col_name)
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        logger.warning("SQLite migration check failed (non-fatal): %s", e)
+
+_migrate_sqlite()
 
 app = FastAPI(
     title=settings.APP_NAME,
