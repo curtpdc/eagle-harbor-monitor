@@ -1,0 +1,3 @@
+2026-02-06T16:33:24          Error occurred, type: error, text: Object reference not set to an instance of an object., stackTrace:    at Kudu.Core.AllSafeLinuxLock.IsLockValid() in /tmp/KuduLite/Kudu.Core/AllSafeLinuxLock.cs:line 97
+   at Kudu.Core.AllSafeLinuxLock.get_IsHeld() in /tmp/KuduLite/Kudu.Core/AllSafeLinuxLock.cs:line 42
+2026-02-06T16:33:26      Outgoing response, type: response, statusCode: 409, statusText: Conflict

@@ -1,0 +1,36 @@
+<step title="BackgroundTrace" date="2026-02-06T04:27:38.270" instance="b47714" url="/api/zipdeploy" method="POST" >
+  <step title="Cleanup Xml Logs" date="2026-02-06T04:27:38.292" /><!-- duration: 30ms -->
+  <step title="Creating temporary deployment - FetchDeploymentManager" date="2026-02-06T04:27:38.814" /><!-- duration: 11ms -->
+  <step title="Creating temporary deployment" date="2026-02-06T04:27:38.835" /><!-- duration: 360ms -->
+  <step title="Performing fetch based deployment" date="2026-02-06T04:27:39.557" >
+    <step title="Cleaning up temp folders from previous zip deployments and extracting pushed zip file /tmp/zipdeploy/f2a72191-c553-4ab1-b314-d0ecf4264b59.zip (15.41 MB) to /tmp/zipdeploy/extracted" date="2026-02-06T04:27:40.803" >
+      <step title="ChmodRecursive Process exited with total time taken in ms: 625" date="2026-02-06T04:27:46.517" /><!-- duration: 8ms -->
+    </step><!-- duration: 5729ms -->
+    <step title="Deployment timer started" date="2026-02-06T04:27:48.553" >
+      <step title="DeploymentManager.Deploy(id:e4c3f55c-c28f-4eb6-8c97-fe685a15aa38)" date="2026-02-06T04:27:48.564" >
+        <step title="Collecting changeset information" date="2026-02-06T04:27:48.604" /><!-- duration: 103ms -->
+        <step title="Updating submodules" date="2026-02-06T04:27:48.716" /><!-- duration: 1308ms -->
+        <step title="Determining deployment builder" date="2026-02-06T04:27:50.616" >
+          <step title="Builder is OryxBuilder" date="2026-02-06T04:27:51.167" /><!-- duration: 44ms -->
+        </step><!-- duration: 613ms -->
+        <step title="PreDeployment: context.CleanOutputPath False" date="2026-02-06T04:27:51.435" >
+          <step title="PreDeployment: context.OutputPath /home/site/wwwroot" date="2026-02-06T04:27:51.748" >
+            <step title="Building" date="2026-02-06T04:27:52.122" >
+              <step title="Executing external process" date="2026-02-06T04:27:53.769" type="process" path="bash" arguments="-c &quot;oryx build /tmp/zipdeploy/extracted -o /home/site/wwwroot --platform python --platform-version 3.11 -p virtualenv_name=antenv --log-file /tmp/build-debug.log  -i /tmp/8de6538171247d3 --compress-destination-dir | tee /tmp/oryx-build.log ; exit $PIPESTATUS &quot;" >
+                <step title="Cpu: python(945,10.830s)+ts(946,0.060s)+build.sh(944,0.000s)+build.sh(943,0.000s)+build.sh(845,0.090s)+oryx(819,15.450s)+tee(820,0.020s)+bash(818,0.020s)=total(26.470s)" date="2026-02-06T04:30:06.034" /><!-- duration: 8ms -->
+                <step title="bash: no io activity for 60s, prev-cpu=-1.000s, current-cpu=26.470s" date="2026-02-06T04:30:06.083" /><!-- duration: 5ms -->
+              </step><!-- duration: 167781ms -->
+              <step title="Using PythonDeploymentLogParser" date="2026-02-06T04:30:43.371" /><!-- duration: 7ms -->
+              <step title="Triggering recycle (preview mode disabled)." date="2026-02-06T04:30:44.991" /><!-- duration: 7ms -->
+              <step title="Modified file to trigger a restart of the app container." date="2026-02-06T04:30:45.028" /><!-- duration: 6ms -->
+              <step title="Skip function trigger and logicapp sync because function is not enabled." date="2026-02-06T04:30:45.048" /><!-- duration: 5ms -->
+            </step><!-- duration: 174470ms -->
+          </step><!-- duration: 174854ms -->
+          <step title="Cleaning up temp files" date="2026-02-06T04:30:46.606" /><!-- duration: 971ms -->
+          <step title="Cleaning up temp files" date="2026-02-06T04:30:47.583" /><!-- duration: 507ms -->
+          <step title="Reloading status file with latest updates" date="2026-02-06T04:30:48.124" >
+            <step title="WebHooksManager.PublishEventAsync: PostDeployment" date="2026-02-06T04:30:48.129" /><!-- duration: 80ms -->
+          </step><!-- duration: 90ms -->
+          <step title="Cleaning up temporary deployment - fetch deployment was successful" date="2026-02-06T04:30:48.225" /><!-- duration: 4ms -->
+        </step><!-- duration: 176860ms -->
+      </step><!-- duration: 179895ms -->

@@ -1,0 +1,16 @@
+<step title="Incoming Request" date="2026-02-06T04:28:16.856" instance="b47714" url="/api/zipdeploy?isAsync=true" method="POST" type="request" pid="768,1,19" Accept="*/*" Host="eagleharbor-api.scm.azurewebsites.net" User-Agent="AZURECLI/2.81.0 (MSI)" Accept-Encoding="gzip, deflate" Authorization="Bea..." Cache-Control="no-cache" Content-Type="application/octet-stream" Content-Length="16155484" x-ms-client-request-id="3b0f3ece-0314-11f1-9fe2-103d1cb53163" x-ms-artifact-checksum="717479fc8dec5fcb9151ac6eb163753fed1176e4878d3213004a87ce69ecefb1" X-ARR-LOG-ID="3b0f3ece-0314-11f1-9fe2-103d1cb53163" CLIENT-IP="44.200.157.254:60989" X-SITE-DEPLOYMENT-ID="eagleharbor-api" WAS-DEFAULT-HOSTNAME="eagleharbor-api.scm.azurewebsites.net" X-Forwarded-Proto="https" X-AppService-Proto="https" X-Forwarded-TlsVersion="1.3" X-WAWS-Unencoded-URL="/api/zipdeploy?isAsync=true" X-Client-IP="44.200.157.254" X-Client-Port="60989" >
+  <step title="Cleanup Xml Logs" date="2026-02-06T04:28:16.882" /><!-- duration: 97ms -->
+  <step title="ZipPushDeploy" date="2026-02-06T04:28:17.165" >
+    <step title="ZipDeploy. Extract zip. Remote build." date="2026-02-06T04:28:17.205" /><!-- duration: 60ms -->
+    <step title="Starting PushDeployAsync" date="2026-02-06T04:28:17.299" /><!-- duration: 16ms -->
+    <step title="Writing artifact to /tmp/zipdeploy/c62c72d7-6791-4549-93c8-d3183bc66d85.zip" date="2026-02-06T04:28:17.570" >
+      <step title="Writing multipart request body to /tmp/zipdeploy/c62c72d7-6791-4549-93c8-d3183bc66d85.zip" date="2026-02-06T04:28:17.637" /><!-- duration: 34ms -->
+    </step><!-- duration: 2994ms -->
+    <step title="Start deployment in the background" date="2026-02-06T04:28:20.660" >
+      <step title="Acquiring Deployment Lock" date="2026-02-06T04:28:21.010" /><!-- duration: 41ms -->
+      <step title="Cannot Acquire Deployment Lock already held" date="2026-02-06T04:28:21.260" /><!-- duration: 18ms -->
+    </step><!-- duration: 1003ms -->
+    <step title="There is a deployment currently in progress. Please try again when it completes." date="2026-02-06T04:28:21.708" /><!-- duration: 41ms -->
+  </step><!-- duration: 4686ms -->
+  <step title="Outgoing response" date="2026-02-06T04:28:22.194" type="response" statusCode="409" statusText="Conflict" /><!-- duration: 28ms -->
+</step><!-- duration: 5394ms -->

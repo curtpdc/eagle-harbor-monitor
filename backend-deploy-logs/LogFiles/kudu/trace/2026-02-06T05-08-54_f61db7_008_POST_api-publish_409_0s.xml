@@ -1,0 +1,13 @@
+<step title="Incoming Request" date="2026-02-06T05:08:54.581" instance="f61db7" url="/api/publish?type=zip&amp;async=False" method="POST" type="request" pid="768,1,37" Accept="*/*" Host="eagleharbor-api.scm.azurewebsites.net" User-Agent="AZURECLI/2.81.0 (MSI)" Accept-Encoding="gzip, deflate" Authorization="Bea..." Cache-Control="no-cache" Content-Type="application/octet-stream" Cookie="ARRAffinity=f61db71164c7fbc96a48b8334d6a4273c48541f982080ae5a71433a0e2a8d849; ARRAffinitySameSite=f61db71164c7fbc96a48b8334d6a4273c48541f982080ae5a71433a0e2a8d849" Content-Length="57458" x-ms-client-request-id="e8a92f7a-0319-11f1-96df-103d1cb53163" x-ms-artifact-checksum="72b5953695c9e45d09d26b7d400925661962154046f3e8b8ba489ffd2c9989cd" X-ARR-LOG-ID="e8a92f7a-0319-11f1-96df-103d1cb53163" CLIENT-IP="54.87.48.45:53371" X-SITE-DEPLOYMENT-ID="eagleharbor-api" WAS-DEFAULT-HOSTNAME="eagleharbor-api.scm.azurewebsites.net" X-Forwarded-Proto="https" X-AppService-Proto="https" X-Forwarded-TlsVersion="1.3" X-WAWS-Unencoded-URL="/api/publish?type=zip&amp;async=False" X-Client-IP="54.87.48.45" X-Client-Port="53371" >
+  <step title="OneDeploy" date="2026-02-06T05:08:54.635" >
+    <step title="Starting PushDeployAsync" date="2026-02-06T05:08:54.646" /><!-- duration: 4ms -->
+    <step title="Writing artifact to /tmp/zipdeploy/9014e91b-2f21-4799-b588-1ef454d8b328.zip" date="2026-02-06T05:08:54.662" >
+      <step title="Writing multipart request body to /tmp/zipdeploy/9014e91b-2f21-4799-b588-1ef454d8b328.zip" date="2026-02-06T05:08:54.666" /><!-- duration: 24ms -->
+    </step><!-- duration: 58ms -->
+    <step title="Attempting to fetch target branch HEAD" date="2026-02-06T05:08:54.781" /><!-- duration: 5ms -->
+    <step title="Acquiring Deployment Lock" date="2026-02-06T05:08:54.799" /><!-- duration: 12ms -->
+    <step title="Cannot Acquire Deployment Lock already held" date="2026-02-06T05:08:54.834" /><!-- duration: 6ms -->
+    <step title="There is a deployment currently in progress. Please try again when it completes." date="2026-02-06T05:08:54.848" /><!-- duration: 11ms -->
+  </step><!-- duration: 243ms -->
+  <step title="Outgoing response" date="2026-02-06T05:08:54.915" type="response" statusCode="409" statusText="Conflict" /><!-- duration: 10ms -->
+</step><!-- duration: 370ms -->
