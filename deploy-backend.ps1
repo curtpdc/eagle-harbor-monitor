@@ -5,7 +5,7 @@ $resourceGroup = "eagleharbor"
 $appName = "eagleharbor-api"
 $location = "eastus2"
 
-Write-Host "🚀 Deploying Eagle Harbor Backend API..." -ForegroundColor Cyan
+Write-Host "Deploying Eagle Harbor Backend API..." -ForegroundColor Cyan
 
 # Check if App Service exists
 Write-Host "Checking if App Service exists..." -ForegroundColor Yellow
@@ -29,9 +29,9 @@ if (-not $appExists) {
         --plan "$appName-plan" `
         --runtime "PYTHON:3.11"
     
-    Write-Host "✅ App Service created" -ForegroundColor Green
+    Write-Host "App Service created" -ForegroundColor Green
 } else {
-    Write-Host "✅ App Service already exists" -ForegroundColor Green
+    Write-Host "App Service already exists" -ForegroundColor Green
 }
 
 # Configure environment variables
@@ -69,9 +69,9 @@ if (Test-Path $envFile) {
         --resource-group $resourceGroup `
         --settings $settings
         
-    Write-Host "✅ Environment variables configured" -ForegroundColor Green
+    Write-Host "Environment variables configured" -ForegroundColor Green
 } else {
-    Write-Host "⚠️  No .env file found. You'll need to set environment variables manually." -ForegroundColor Yellow
+    Write-Host "No .env file found. You'll need to set environment variables manually." -ForegroundColor Yellow
     Write-Host "Run: az webapp config appsettings set --name $appName --resource-group $resourceGroup --settings KEY=VALUE" -ForegroundColor Yellow
 }
 
@@ -107,7 +107,7 @@ Remove-Item $deployPath
 
 Pop-Location
 
-Write-Host "`n✅ Deployment initiated!" -ForegroundColor Green
+Write-Host "`nDeployment initiated!" -ForegroundColor Green
 Write-Host "`nMonitor deployment status:" -ForegroundColor Cyan
 Write-Host "az webapp log tail --name $appName --resource-group $resourceGroup" -ForegroundColor White
 
@@ -115,7 +115,7 @@ Write-Host "`nOnce deployed, test the API:" -ForegroundColor Cyan
 Write-Host "curl https://$appName.azurewebsites.net/health" -ForegroundColor White
 Write-Host "curl https://$appName.azurewebsites.net/api/articles" -ForegroundColor White
 
-Write-Host "`n📝 Next Steps:" -ForegroundColor Yellow
+Write-Host "`nNext Steps:" -ForegroundColor Yellow
 Write-Host "1. Wait 2-3 minutes for deployment to complete"
 Write-Host "2. Check deployment logs in Azure Portal"
 Write-Host "3. Test the /health endpoint"

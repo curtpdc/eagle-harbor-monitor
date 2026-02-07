@@ -21,6 +21,26 @@ build/
 # Logs
 *.log
 
+# Azure deployment logs & backups
+latest-logs/
+backend-latest-logs/
+crash-logs/
+error-logs/
+backend/backend-logs/
+backend/backend-logs-new/
+backend/existing-backend-logs/
+backend/logs/
+backup-*/
+
+# Zip artifacts
+*.zip
+
+# Publish profiles (contain secrets)
+*publish-profile*.xml
+
+# VS Code workspace settings
+.vscode/
+
 # OS
 .DS_Store
 Thumbs.db

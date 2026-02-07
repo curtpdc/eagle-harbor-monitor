@@ -25,8 +25,10 @@ CREATE TABLE IF NOT EXISTS articles (
     published_date TIMESTAMP,
     discovered_date TIMESTAMP DEFAULT NOW(),
     priority_score INTEGER,
+    relevance_score INTEGER,
     category VARCHAR(100),
     county VARCHAR(100),
+    event_date TIMESTAMP,
     notified BOOLEAN DEFAULT FALSE,
     analyzed BOOLEAN DEFAULT FALSE
 );
@@ -34,6 +36,7 @@ CREATE TABLE IF NOT EXISTS articles (
 CREATE INDEX idx_articles_url ON articles(url);
 CREATE INDEX idx_articles_discovered ON articles(discovered_date DESC);
 CREATE INDEX idx_articles_priority ON articles(priority_score DESC);
+CREATE INDEX idx_articles_relevance ON articles(relevance_score DESC);
 CREATE INDEX idx_articles_notified ON articles(notified);
 
 -- Create alerts_sent table

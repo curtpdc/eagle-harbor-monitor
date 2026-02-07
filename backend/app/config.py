@@ -26,13 +26,21 @@ class Settings(BaseSettings):
     APP_URL: str = "https://eagleharbormonitor.org"
     DEBUG: bool = True
     
-    # Monitoring Keywords
+    # Monitoring Keywords — keep in sync with functions/function_app.py
     KEYWORDS: List[str] = [
         "data center", "datacenter", "eagle harbor", "chalk point",
         "qualified data center", "CR-98-2025", "Executive Order 42-2025",
-        "Landover Mall", "zoning", "AR zone", "RE zone",
-        "MNCPPC", "Planning Board", "legislative amendment"
+        "EO 42-2025", "Landover Mall", "zoning", "AR zone", "RE zone",
+        "MNCPPC", "Planning Board", "legislative amendment",
+        "prince george", "charles county", "pg county",
+        "moratorium", "special exception", "zoning text amendment",
+        "task force", "environmental justice", "PEPCO", "grid capacity",
+        "megawatt", "cooling water", "patuxent river",
+        "upper marlboro", "brandywine", "bowie",
     ]
+    
+    # Article display — minimum relevance_score (0-10) to show in Latest Updates
+    MIN_RELEVANCE_DISPLAY: int = 4
     
     # Email Settings
     WEEKLY_DIGEST_DAY: int = 4  # Friday

@@ -29,8 +29,9 @@ class Article(Base):
     
     # Classification
     priority_score = Column(Integer)  # 1-10
+    relevance_score = Column(Integer)  # 0-10: Maryland relevance (8+ = PG/Charles, 0-1 = not MD)
     category = Column(String(100))  # policy, meeting, legislation, environmental, community
-    county = Column(String(100))  # prince_georges, charles, both
+    county = Column(String(100))  # prince_georges, charles, both, maryland_statewide, unclear
     event_date = Column(DateTime, index=True)  # For articles about future events
     
     # Processing status

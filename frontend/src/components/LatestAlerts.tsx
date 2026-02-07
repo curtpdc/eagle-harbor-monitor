@@ -12,7 +12,9 @@ interface Article {
   published_date: string | null
   discovered_date: string
   priority_score: number | null
+  relevance_score: number | null
   category: string | null
+  county: string | null
 }
 
 export default function LatestAlerts() {
@@ -27,7 +29,7 @@ export default function LatestAlerts() {
   const fetchArticles = async () => {
     try {
       const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
-      const response = await axios.get(`${API_URL}/api/articles?limit=10`)
+      const response = await axios.get(`${API_URL}/api/articles?limit=10&min_relevance=4`)
       setArticles(response.data.articles)
     } catch (err) {
       setError('Failed to load articles')
@@ -98,6 +100,18 @@ export default function LatestAlerts() {
                 <span className="font-medium text-primary">{article.source}</span>
                 <span>•</span>
                 <span>{formatDate(article.discovered_date)}</span>
+                {article.county && article.county !== 'unclear' && (
+                  <>
+                    <span>•</span>
+                    <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs font-medium">
+                      {article.county === 'prince_georges' ? "Prince George's" :
+                       article.county === 'charles' ? 'Charles County' :
+                       article.county === 'both' ? "PG & Charles" :
+                       article.county === 'maryland_statewide' ? 'Maryland' :
+                       article.county}
+                    </span>
+                  </>
+                )}
                 {article.category && (
                   <>
                     <span>•</span>

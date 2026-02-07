@@ -20,7 +20,9 @@ class ArticleResponse(BaseModel):
     published_date: Optional[datetime]
     discovered_date: datetime
     priority_score: Optional[int]
+    relevance_score: Optional[int]
     category: Optional[str]
+    county: Optional[str]
     
     class Config:
         from_attributes = True

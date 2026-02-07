@@ -105,21 +105,45 @@ async def get_articles(
     limit: int = Query(10, ge=1, le=50),
     page: int = Query(1, ge=1),
     category: Optional[str] = None,
+    county: Optional[str] = Query(None, description="Filter by county (prince_georges, charles, both, maryland_statewide)"),
+    min_relevance: Optional[int] = Query(None, ge=0, le=10, description="Minimum relevance score (0-10). Defaults to MIN_RELEVANCE_DISPLAY setting."),
+    min_priority: Optional[int] = Query(None, ge=1, le=10, description="Minimum priority score (1-10)"),
     db: Session = Depends(get_db)
 ):
-    """Get recent articles"""
+    """Get recent articles filtered by relevance to Maryland data center developments."""
+    from app.config import settings
     
     query = db.query(Article).filter(Article.analyzed == True)
+    
+    # Apply relevance filter — default to configured minimum
+    effective_min_relevance = min_relevance if min_relevance is not None else settings.MIN_RELEVANCE_DISPLAY
+    if effective_min_relevance > 0:
+        # Include articles with relevance_score >= threshold, plus legacy articles with NULL (not yet scored)
+        query = query.filter(
+            or_(
+                Article.relevance_score >= effective_min_relevance,
+                Article.relevance_score == None  # Legacy articles not yet re-analyzed
+            )
+        )
     
     if category:
         query = query.filter(Article.category == category)
     
+    if county:
+        query = query.filter(Article.county == county)
+    
+    if min_priority:
+        query = query.filter(Article.priority_score >= min_priority)
+    
     # Count total
     total = query.count()
     
-    # Paginate
+    # Paginate — sort by date, then priority within the same date
     offset = (page - 1) * limit
-    articles = query.order_by(desc(Article.discovered_date)).offset(offset).limit(limit).all()
+    articles = query.order_by(
+        desc(Article.discovered_date),
+        desc(Article.priority_score)
+    ).offset(offset).limit(limit).all()
     
     return ArticleListResponse(
         articles=articles,
@@ -203,7 +227,11 @@ async def ask_question(request: QuestionRequest, db: Session = Depends(get_db)):
         if len(articles) < 10:
             recent_top = db.query(Article).filter(
                 Article.analyzed == True,
-                Article.discovered_date >= cutoff
+                Article.discovered_date >= cutoff,
+                or_(
+                    Article.relevance_score >= 4,
+                    Article.relevance_score == None  # Legacy articles not yet scored
+                )
             ).order_by(desc(Article.priority_score), desc(Article.discovered_date)).limit(15).all()
             for article in recent_top:
                 if article.id not in seen_ids:
