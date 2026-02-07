@@ -677,3 +677,91 @@ async def get_event_timeline(
         "period": f"past {days_back} days",
         "as_of": now.isoformat()
     }
+
+
+# ── Admin / Seed Endpoints ──────────────────────────────────────────────────
+
+@router.post("/admin/seed-watchlist")
+async def seed_watchlist(db: Session = Depends(get_db)):
+    """Seed initial Amendment Watchlist items (idempotent — skips existing)."""
+    from datetime import timezone
+
+    items = [
+        {
+            "matter_id": 900001,
+            "matter_file": "ZTA-2026-001",
+            "matter_type": "Zoning Text Amendment",
+            "title": "Zoning Text Amendment - Qualified Data Centers in AR and RE Zones",
+            "body_name": "Prince George's County Planning Board",
+            "current_status": "Initiated by Planning Board",
+            "last_action_date": datetime(2026, 1, 29, tzinfo=timezone.utc),
+            "watch_reason": "CRITICAL: Jan 29, 2026 Planning Board vote (3-0) formally initiated amendment to permit qualified data centers in AR and RE zones.",
+            "priority": "high",
+        },
+        {
+            "matter_id": 900002,
+            "matter_file": "CR-98-2025",
+            "matter_type": "Council Resolution",
+            "title": "CR-98-2025 - Data Center Task Force and Impact Assessment",
+            "body_name": "Prince George's County Council",
+            "current_status": "Active - Task Force Convened",
+            "last_action_date": datetime(2025, 6, 15, tzinfo=timezone.utc),
+            "watch_reason": "County resolution establishing a Data Center Task Force to study impact of data center development.",
+            "priority": "high",
+        },
+        {
+            "matter_id": 900003,
+            "matter_file": "EO-42-2025",
+            "matter_type": "Executive Order",
+            "title": "Executive Order 42-2025 - State Data Center Zoning and Environmental Evaluation",
+            "body_name": "State of Maryland - Governor's Office",
+            "current_status": "Active - State Implementation",
+            "last_action_date": datetime(2025, 3, 1, tzinfo=timezone.utc),
+            "watch_reason": "State-level executive order requiring evaluation of data center zoning and environmental impact across Maryland.",
+            "priority": "high",
+        },
+        {
+            "matter_id": 900004,
+            "matter_file": "CHALK-POINT",
+            "matter_type": "Development Project",
+            "title": "Chalk Point Power Plant - Data Center Conversion/Redevelopment",
+            "body_name": "Prince George's County Planning Board",
+            "current_status": "Pre-Application / Monitoring",
+            "watch_reason": "Tracking potential conversion of the retired Chalk Point coal-fired power plant site in Eagle Harbor for data center use.",
+            "priority": "high",
+        },
+        {
+            "matter_id": 900005,
+            "matter_file": "LANDOVER-MALL",
+            "matter_type": "Development Project",
+            "title": "Landover Mall Site - Data Center Development Proposal",
+            "body_name": "Prince George's County Planning Board",
+            "current_status": "Monitoring",
+            "watch_reason": "Monitoring the Landover Mall redevelopment site for potential data center components.",
+            "priority": "medium",
+        },
+    ]
+
+    inserted = 0
+    skipped = 0
+    for item_data in items:
+        existing = db.query(WatchedMatter).filter_by(matter_id=item_data["matter_id"]).first()
+        if existing:
+            skipped += 1
+            continue
+        matter = WatchedMatter(**item_data)
+        db.add(matter)
+        db.flush()
+        history = MatterHistory(
+            matter_id=item_data["matter_id"],
+            action_date=item_data.get("last_action_date") or datetime.now(timezone.utc),
+            action_text="Added to Eagle Harbor Monitor watchlist",
+            action_body=item_data["body_name"],
+            is_milestone=True,
+            notified=False,
+        )
+        db.add(history)
+        inserted += 1
+
+    db.commit()
+    return {"inserted": inserted, "skipped": skipped, "total": inserted + skipped}

@@ -1,15 +1,12 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from sqlalchemy import inspect
 from app.api.routes import router
 from app.database import engine, Base
 from app.config import settings
+import app.models  # noqa: F401 — register all ORM models with Base
 
-# Only create tables if they don't already exist (preserves existing data)
-inspector = inspect(engine)
-existing_tables = inspector.get_table_names()
-if not existing_tables:
-    Base.metadata.create_all(bind=engine)
+# create_all is idempotent — creates any missing tables without affecting existing ones
+Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
     title=settings.APP_NAME,
