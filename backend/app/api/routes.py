@@ -267,9 +267,14 @@ async def ask_question(request: QuestionRequest, db: Session = Depends(get_db)):
         
         logging.info(f"Found {len(keyword_articles)} keyword matches, {len(articles)} total articles, {len(events)} events")
         
+        # Step 4: Live web search for supplementary context
+        from app.services.web_search import search_web
+        web_results = await search_web(question_text)
+        logging.info(f"Web search returned {len(web_results)} results")
+        
         # Generate answer using AI with timeout handling
         logging.info("Calling AI service answer_question...")
-        answer_data = await ai_service.answer_question(question_text, articles, events)
+        answer_data = await ai_service.answer_question(question_text, articles, events, web_results)
         logging.info("AI answer generated successfully")
         
         return QuestionResponse(**answer_data)

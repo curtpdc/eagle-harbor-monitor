@@ -88,26 +88,36 @@ developments in Prince George's County and Charles County, Maryland. Today is {t
 - Environmental impacts: grid capacity (PEPCO/Exelon), water usage, heat islands
 - Key sites: Chalk Point Power Plant, Landover Mall, Eagle Harbor
 - Community stakeholder dynamics and opposition movements
+- National and global data center industry trends, market analysis, and technology
+
+## Source types you may receive
+1. **[Article N]** — Saved articles from our monitoring database (most trusted for local facts)
+2. **[Web N]** — Live web search results fetched in real-time (current but verify carefully)
+3. **Upcoming Events** — Calendar entries from our database
+4. **Your training knowledge** — General expertise (clearly label when using this)
 
 ## Rules
-1. **Ground answers in provided article/event context.** Cite sources by name and date.
-2. When context is insufficient, say so explicitly — suggest the user check back as new \
-articles are scraped continuously from government and news sources.
-3. **NEVER fabricate facts, dates, vote counts, or meeting outcomes.** If you don't know, say so.
-4. For questions about broader Maryland data center trends, provide what you know but \
-clearly distinguish between monitored facts (from articles) and general knowledge.
+1. **Blend ALL source types** to give the most complete answer. Prioritize saved articles for \
+local PG/Charles County facts, use web results for breaking news and broader context, and \
+fill gaps with your general expertise.
+2. **Cite sources explicitly**: use [Article N], [Web N], or state "Based on general knowledge..."
+3. **NEVER fabricate facts, dates, vote counts, or meeting outcomes.** If unsure, say so.
+4. For broader Maryland or national data center questions, use web results and general \
+knowledge freely — you are NOT limited to our saved articles.
 5. When discussing upcoming votes or decisions, note that outcomes are uncertain until official results.
 6. Always mention relevant legislation (CR-98-2025, EO 42-2025) when applicable.
 7. For meeting/hearing questions, include dates, locations, and how residents can participate.
 8. Keep answers concise but thorough. Use bullet points for multi-part answers.
-9. If asked about topics completely outside Maryland data centers, briefly redirect to your focus area.
+9. If context is thin, say so and note the user can check back as new articles are scraped \
+continuously from government and news sources.
 
 ## Source hierarchy (most to least authoritative)
-1. PG County Legistar / official government records
-2. MNCPPC Planning Board documents
-3. Maryland Matters, Baltimore Sun (state-level reporting)
-4. WTOP, Washington Post (regional reporting)
-5. Patch, local community sources"""
+1. PG County Legistar / official government records [Article]
+2. MNCPPC Planning Board documents [Article]
+3. Live web search results from official sources [Web]
+4. Maryland Matters, Baltimore Sun (state-level reporting) [Article/Web]
+5. WTOP, Washington Post (regional reporting) [Article/Web]
+6. General training knowledge (label clearly)"""
 
 
 EVENT_EXTRACTION_SYSTEM = """You are an expert at extracting structured event data from government \
@@ -420,12 +430,13 @@ Return JSON with keys: relevance_score, priority_score, category, county, summar
             'key_points': []
         }
     
-    @async_timeout(60)
-    async def answer_question(self, question: str, articles: List[Article], events: Optional[List[Event]] = None) -> Dict:
+    @async_timeout(90)
+    async def answer_question(self, question: str, articles: List[Article], events: Optional[List[Event]] = None, web_results: Optional[List[Dict]] = None) -> Dict:
         """Answer user question using RAG with Azure OpenAI.
         
-        Uses domain-expert persona, structured context injection, and confidence
-        scoring calibrated to context coverage.
+        Uses domain-expert persona, structured context injection from saved
+        articles, live web search results, and general knowledge — blended
+        for the most complete answer.
         """
         
         if not self.enabled:
@@ -487,30 +498,39 @@ Return JSON with keys: relevance_score, priority_score, category, county, summar
                 )
             event_context = "\n\n## Upcoming Events\n" + "\n\n".join(event_lines)
 
+        # ── Build web search context ─────────────────────────────────────────
+        web_context = ""
+        if web_results:
+            from app.services.web_search import format_web_results
+            web_context = format_web_results(web_results)
+
         # ── System prompt from template ──────────────────────────────────────
         system_prompt = CHAT_SYSTEM_TEMPLATE.format(today=today)
 
-        has_context = bool(article_list) or bool(events)
+        has_context = bool(article_list) or bool(events) or bool(web_results)
 
         if has_context:
             user_prompt = f"""## Monitored Articles
 {context}
 {event_context}
+{web_context}
 
 ## Question
 {question}
 
-Answer using the articles/events above. Cite sources by [Article N] reference and name. \
-If the articles only partially answer the question, state what is known and what gaps remain."""
+Answer using ALL available sources — saved articles, web search results, and your expertise. \
+Cite with [Article N] or [Web N]. Blend sources for a complete answer. If gaps remain, say so."""
         else:
             user_prompt = f"""The user asked: {question}
 
-Our monitoring database currently has no articles matching this specific query.
-Provide a brief, helpful response that:
-1. Acknowledges we don't have tracked articles on this specific topic yet
-2. Provides relevant general context about data center policy in Prince George's County and Charles County, Maryland
-3. Notes that our system continuously scrapes government sources (PG County Legistar, MNCPPC), Maryland news (Maryland Matters, WTOP, Washington Post, Patch, Baltimore Sun), and state government feeds
-4. Suggests the user check back or rephrase their question
+Our monitoring database currently has no articles matching this specific query, and no \
+web search results were returned.
+
+Provide a helpful response using your general expertise on Maryland data centers, zoning \
+policy, and the data center industry. Clearly note you are drawing on general knowledge \
+rather than tracked sources. Mention that our system continuously scrapes government \
+sources (PG County Legistar, MNCPPC), Maryland news, and state feeds — so the user can \
+check back for tracked information.
 
 Keep the response concise and helpful."""
 
@@ -540,8 +560,9 @@ Keep the response concise and helpful."""
             if has_context:
                 n_articles = len(article_list)
                 n_events = len(events) if events else 0
+                n_web = len(web_results) if web_results else 0
                 # More sources = higher confidence, capped at 0.95
-                confidence = min(0.95, 0.5 + 0.05 * n_articles + 0.03 * n_events)
+                confidence = min(0.95, 0.45 + 0.05 * n_articles + 0.03 * n_events + 0.04 * n_web)
             else:
                 confidence = 0.25
 
@@ -553,16 +574,28 @@ Keep the response concise and helpful."""
                 has_context, confidence, len(answer)
             )
 
+            # Build combined source list: saved articles + web results
+            sources = [
+                {
+                    'title': _get(a, 'title'),
+                    'url': _get(a, 'url'),
+                    'date': str(_get(a, 'published_date') or _get(a, 'discovered_date', 'unknown')),
+                    'type': 'article'
+                }
+                for a in article_list
+            ]
+            if web_results:
+                for wr in web_results:
+                    sources.append({
+                        'title': wr.get('title', 'Web result'),
+                        'url': wr.get('url', ''),
+                        'date': 'live search',
+                        'type': 'web'
+                    })
+
             return {
                 'answer': answer,
-                'sources': [
-                    {
-                        'title': _get(a, 'title'),
-                        'url': _get(a, 'url'),
-                        'date': str(_get(a, 'published_date') or _get(a, 'discovered_date', 'unknown'))
-                    }
-                    for a in article_list
-                ],
+                'sources': sources,
                 'confidence': confidence
             }
 
