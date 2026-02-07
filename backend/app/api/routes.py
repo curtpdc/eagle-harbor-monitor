@@ -8,7 +8,7 @@ import re
 from datetime import datetime, timedelta
 
 from app.database import get_db
-from app.models import Subscriber, Article, Event
+from app.models import Subscriber, Article, Event, WatchedMatter, MatterHistory, MatterAttachment, MatterVote
 from app.schemas import (
     SubscriberCreate,
     SubscriberResponse,
@@ -16,8 +16,17 @@ from app.schemas import (
     ArticleResponse,
     QuestionRequest,
     QuestionResponse,
-    HealthResponse
+    FeedbackRequest,
+    FeedbackResponse,
+    HealthResponse,
+    WatchedMatterCreate,
+    WatchedMatterResponse,
+    WatchedMatterDetailResponse,
+    MatterHistoryResponse,
+    MatterAttachmentResponse,
+    MatterVoteResponse,
 )
+from app.config import settings
 from app.services.email_service import EmailService
 from app.services.ai_service import AIService, AIServiceError
 
@@ -285,6 +294,32 @@ async def ask_question(request: QuestionRequest, db: Session = Depends(get_db)):
         )
 
 
+@router.post("/feedback", response_model=FeedbackResponse)
+async def submit_feedback(request: FeedbackRequest):
+    """Submit feedback on an AI answer to improve quality over time."""
+    ai_service = AIService()
+    ok = ai_service.record_feedback(
+        question=request.question,
+        answer=request.answer,
+        rating=request.rating,
+        comment=request.comment or "",
+    )
+    if ok:
+        return FeedbackResponse(success=True, message="Thank you for your feedback!")
+    raise HTTPException(status_code=500, detail="Failed to record feedback")
+
+
+@router.get("/ai/stats")
+async def ai_stats():
+    """Return fine-tuning data collection statistics."""
+    ai_service = AIService()
+    return {
+        "enabled": ai_service.enabled,
+        "model": settings.AZURE_OPENAI_DEPLOYMENT,
+        "finetune_data": ai_service.get_finetune_stats(),
+    }
+
+
 @router.get("/health", response_model=HealthResponse)
 async def health_check(db: Session = Depends(get_db)):
     """Health check endpoint"""
@@ -299,12 +334,261 @@ async def health_check(db: Session = Depends(get_db)):
     # Get last scrape time
     last_article = db.query(Article).order_by(desc(Article.discovered_date)).first()
     last_scrape = last_article.discovered_date if last_article else None
+
+    # Watchlist summary for health
+    try:
+        active_watches = db.query(WatchedMatter).filter(WatchedMatter.is_active == True).count()
+    except Exception:
+        active_watches = 0
     
     return HealthResponse(
         status="healthy" if db_status == "healthy" else "degraded",
         database=db_status,
         last_scrape=last_scrape
     )
+
+
+# ── Amendment Watchlist Endpoints ─────────────────────────────────────────────
+
+
+@router.get("/watchlist", response_model=List[WatchedMatterResponse])
+async def get_watchlist(
+    active_only: bool = Query(True, description="Only show active watched matters"),
+    db: Session = Depends(get_db),
+):
+    """List all watched matters (amendment / legislation tracking)."""
+    query = db.query(WatchedMatter)
+    if active_only:
+        query = query.filter(WatchedMatter.is_active == True)
+    matters = query.order_by(desc(WatchedMatter.updated_date)).all()
+    return matters
+
+
+@router.get("/watchlist/{matter_id}", response_model=WatchedMatterDetailResponse)
+async def get_watched_matter_detail(matter_id: int, db: Session = Depends(get_db)):
+    """Get full detail for a watched matter including history, attachments, and votes."""
+    matter = db.query(WatchedMatter).filter(WatchedMatter.matter_id == matter_id).first()
+    if not matter:
+        raise HTTPException(status_code=404, detail=f"Matter {matter_id} not found in watchlist")
+
+    histories = (
+        db.query(MatterHistory)
+        .filter(MatterHistory.matter_id == matter_id)
+        .order_by(desc(MatterHistory.action_date))
+        .all()
+    )
+    attachments = (
+        db.query(MatterAttachment)
+        .filter(MatterAttachment.matter_id == matter_id)
+        .order_by(desc(MatterAttachment.discovered_date))
+        .all()
+    )
+    votes = (
+        db.query(MatterVote)
+        .filter(MatterVote.matter_id == matter_id)
+        .order_by(desc(MatterVote.vote_date))
+        .all()
+    )
+
+    # Build response with relationships
+    result = WatchedMatterDetailResponse.model_validate(matter)
+    result.histories = [MatterHistoryResponse.model_validate(h) for h in histories]
+    result.attachments = [MatterAttachmentResponse.model_validate(a) for a in attachments]
+    result.votes = [MatterVoteResponse.model_validate(v) for v in votes]
+    return result
+
+
+@router.post("/watchlist", response_model=WatchedMatterResponse)
+async def add_to_watchlist(request: WatchedMatterCreate, db: Session = Depends(get_db)):
+    """Manually add a Legistar matter to the watchlist.
+
+    Provide the Legistar MatterId (visible in legislation URLs) and a title.
+    The tracker will begin polling for status changes, attachments, and votes.
+    """
+    existing = db.query(WatchedMatter).filter(WatchedMatter.matter_id == request.matter_id).first()
+    if existing:
+        if not existing.is_active:
+            existing.is_active = True
+            existing.watch_reason = request.watch_reason or existing.watch_reason
+            db.commit()
+            db.refresh(existing)
+            return existing
+        raise HTTPException(status_code=400, detail="Matter already on watchlist")
+
+    legistar_url = (
+        f"https://princegeorgescountymd.legistar.com/LegislationDetail.aspx"
+        f"?ID={request.matter_id}"
+    )
+
+    matter = WatchedMatter(
+        matter_id=request.matter_id,
+        matter_file=request.matter_file,
+        matter_type=request.matter_type,
+        title=request.title,
+        body_name=request.body_name,
+        legistar_url=legistar_url,
+        watch_reason=request.watch_reason or "Manually added",
+        auto_detected=False,
+        is_active=True,
+        priority=request.priority,
+    )
+    db.add(matter)
+    db.commit()
+    db.refresh(matter)
+    return matter
+
+
+@router.delete("/watchlist/{matter_id}")
+async def remove_from_watchlist(matter_id: int, db: Session = Depends(get_db)):
+    """Deactivate a matter from the watchlist (soft delete)."""
+    matter = db.query(WatchedMatter).filter(WatchedMatter.matter_id == matter_id).first()
+    if not matter:
+        raise HTTPException(status_code=404, detail="Matter not found")
+    matter.is_active = False
+    db.commit()
+    return {"message": f"Matter {matter_id} removed from active watchlist"}
+
+
+@router.post("/watchlist/{matter_id}/analyze")
+async def analyze_watchlist_attachment(
+    matter_id: int,
+    attachment_id: Optional[int] = Query(None, description="Specific attachment ID to analyze; omit to analyze all unanalyzed"),
+    db: Session = Depends(get_db),
+):
+    """Trigger AI analysis on attachment text for a watched matter.
+
+    Analyzes the amendment text for approval path, qualified definition,
+    power provisions, infrastructure triggers, and compatibility standards.
+    """
+    matter = db.query(WatchedMatter).filter(WatchedMatter.matter_id == matter_id).first()
+    if not matter:
+        raise HTTPException(status_code=404, detail="Matter not found")
+
+    query = db.query(MatterAttachment).filter(MatterAttachment.matter_id == matter_id)
+    if attachment_id:
+        query = query.filter(MatterAttachment.id == attachment_id)
+    else:
+        query = query.filter(MatterAttachment.analyzed == False)
+
+    attachments = query.all()
+    if not attachments:
+        raise HTTPException(status_code=404, detail="No unanalyzed attachments found")
+
+    ai_service = AIService()
+    results = []
+
+    for att in attachments:
+        if not att.content_text:
+            results.append({"attachment_id": att.id, "status": "skipped", "reason": "no text content"})
+            continue
+
+        try:
+            analysis = await ai_service.analyze_amendment_text(
+                matter_title=matter.title,
+                attachment_name=att.name or "",
+                text_content=att.content_text,
+            )
+
+            att.ai_summary = analysis.get("summary", "")
+            att.ai_analysis = analysis
+            att.analyzed = True
+
+            # Update parent matter with extracted fields
+            if analysis.get("approval_path") and analysis["approval_path"] != "unclear":
+                matter.approval_path = analysis["approval_path"]
+            if analysis.get("qualified_definition"):
+                matter.qualified_definition = analysis["qualified_definition"]
+            if analysis.get("power_provisions"):
+                matter.power_provisions = analysis["power_provisions"]
+            if analysis.get("infrastructure_triggers"):
+                matter.infrastructure_triggers = analysis["infrastructure_triggers"]
+            if analysis.get("compatibility_standards"):
+                matter.compatibility_standards = analysis["compatibility_standards"]
+
+            results.append({"attachment_id": att.id, "status": "analyzed", "summary": att.ai_summary[:200]})
+        except Exception as e:
+            results.append({"attachment_id": att.id, "status": "error", "reason": str(e)})
+
+    db.commit()
+    return {"matter_id": matter_id, "analyzed": len(results), "results": results}
+
+
+@router.get("/watchlist/changes/recent")
+async def get_recent_watchlist_changes(
+    hours: int = Query(48, description="Look back this many hours"),
+    db: Session = Depends(get_db),
+):
+    """Get recent changes across all watched matters (for dashboard / alerts)."""
+    cutoff = datetime.now() - timedelta(hours=hours)
+
+    new_histories = (
+        db.query(MatterHistory)
+        .filter(MatterHistory.discovered_date >= cutoff)
+        .order_by(desc(MatterHistory.discovered_date))
+        .all()
+    )
+    new_attachments = (
+        db.query(MatterAttachment)
+        .filter(MatterAttachment.discovered_date >= cutoff)
+        .order_by(desc(MatterAttachment.discovered_date))
+        .all()
+    )
+    new_votes = (
+        db.query(MatterVote)
+        .filter(MatterVote.discovered_date >= cutoff)
+        .order_by(desc(MatterVote.discovered_date))
+        .all()
+    )
+
+    # Gather matter titles for context
+    matter_ids = set()
+    for h in new_histories:
+        matter_ids.add(h.matter_id)
+    for a in new_attachments:
+        matter_ids.add(a.matter_id)
+    for v in new_votes:
+        matter_ids.add(v.matter_id)
+
+    matter_titles = {}
+    if matter_ids:
+        matters = db.query(WatchedMatter).filter(WatchedMatter.matter_id.in_(matter_ids)).all()
+        matter_titles = {m.matter_id: m.title for m in matters}
+
+    return {
+        "period_hours": hours,
+        "as_of": datetime.now().isoformat(),
+        "histories": [
+            {
+                "matter_id": h.matter_id,
+                "matter_title": matter_titles.get(h.matter_id, ""),
+                "action_date": h.action_date.isoformat() if h.action_date else None,
+                "action_text": h.action_text,
+                "result": h.result,
+                "is_milestone": h.is_milestone,
+            }
+            for h in new_histories
+        ],
+        "attachments": [
+            {
+                "matter_id": a.matter_id,
+                "matter_title": matter_titles.get(a.matter_id, ""),
+                "name": a.name,
+                "hyperlink": a.hyperlink,
+                "analyzed": a.analyzed,
+            }
+            for a in new_attachments
+        ],
+        "votes": [
+            {
+                "matter_id": v.matter_id,
+                "matter_title": matter_titles.get(v.matter_id, ""),
+                "vote_date": v.vote_date.isoformat() if v.vote_date else None,
+                "result": v.result,
+                "tally": v.tally,
+            }
+            for v in new_votes
+        ],
+    }
 
 
 @router.get("/events/upcoming")

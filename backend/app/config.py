@@ -39,6 +39,12 @@ class Settings(BaseSettings):
         "upper marlboro", "brandywine", "bowie",
     ]
     
+    # AI tuning parameters
+    AI_ANALYSIS_TEMPERATURE: float = 0.2    # Lower = more consistent scoring
+    AI_CHAT_TEMPERATURE: float = 0.35       # Slightly creative for conversational answers
+    AI_EVENT_TEMPERATURE: float = 0.1       # Very precise for date extraction
+    AI_MAX_CONTENT_CHARS: int = 3000        # Max article content sent to model
+
     # Article display — minimum relevance_score (0-10) to show in Latest Updates
     MIN_RELEVANCE_DISPLAY: int = 4
     

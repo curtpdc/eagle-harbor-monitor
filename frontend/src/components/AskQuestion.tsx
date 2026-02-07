@@ -21,29 +21,34 @@ export default function AskQuestion() {
 
   const exampleQuestions = [
     {
+      icon: '�',
+      question: "What are the latest data center developments this week?",
+      category: "Latest"
+    },
+    {
       icon: '📋',
-      question: "What is CR-98-2025 and what does it mean?",
-      category: "Policy"
+      question: "What is CR-98-2025 and what does the Task Force do?",
+      category: "Legislation"
     },
     {
-      icon: '📅',
-      question: "When is the next Planning Board meeting?",
-      category: "Events"
-    },
-    {
-      icon: '🗺️',
-      question: "What zones are affected by the data center amendment?",
-      category: "Zoning"
+      icon: '🏗️',
+      question: "What's happening with Eagle Harbor and the Chalk Point site?",
+      category: "Eagle Harbor"
     },
     {
       icon: '⚡',
-      question: "What is the current Chalk Point Power Plant status?",
-      category: "Infrastructure"
+      question: "How will data centers impact the local power grid and water resources?",
+      category: "Environment"
     },
     {
-      icon: '🌍',
-      question: "What are the environmental concerns?",
-      category: "Environment"
+      icon: '📅',
+      question: "When are the next public hearings or meetings I can attend?",
+      category: "Participate"
+    },
+    {
+      icon: '📜',
+      question: "What is Executive Order 42-2025 and how does it affect our county?",
+      category: "State Policy"
     },
   ]
 

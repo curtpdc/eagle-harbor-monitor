@@ -5,6 +5,7 @@ import EmailSubscribe from '@/components/EmailSubscribe'
 import LatestAlerts from '@/components/LatestAlerts'
 import AskQuestion from '@/components/AskQuestion'
 import EventCalendar from '@/components/EventCalendar'
+import AmendmentWatchlist from '@/components/AmendmentWatchlist'
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState('calendar')
@@ -32,6 +33,7 @@ export default function Home() {
             <div className="hidden md:flex items-center space-x-6">
               <a href="#updates" className="text-gray-700 hover:text-blue-600 font-medium transition-colors">Updates</a>
               <a href="#calendar" className="text-gray-700 hover:text-blue-600 font-medium transition-colors">Calendar</a>
+              <a href="#watchlist" className="text-gray-700 hover:text-blue-600 font-medium transition-colors">Watchlist</a>
               <a href="#ask" className="text-gray-700 hover:text-blue-600 font-medium transition-colors">Ask AI</a>
               <a 
                 href="#subscribe" 
@@ -131,6 +133,17 @@ export default function Home() {
                   <div>Latest Updates</div>
                 </button>
                 <button
+                  onClick={() => setActiveTab('watchlist')}
+                  className={`flex-1 px-6 py-5 font-semibold transition-all ${
+                    activeTab === 'watchlist'
+                      ? 'bg-blue-50 text-blue-700 border-b-4 border-blue-600'
+                      : 'text-gray-600 hover:bg-gray-50'
+                  }`}
+                >
+                  <div className="text-3xl mb-1">📋</div>
+                  <div>Watchlist</div>
+                </button>
+                <button
                   onClick={() => setActiveTab('ask')}
                   className={`flex-1 px-6 py-5 font-semibold transition-all ${
                     activeTab === 'ask'
@@ -148,6 +161,7 @@ export default function Home() {
             <div className="p-8">
               {activeTab === 'calendar' && <EventCalendar />}
               {activeTab === 'alerts' && <LatestAlerts />}
+              {activeTab === 'watchlist' && <AmendmentWatchlist />}
               {activeTab === 'ask' && <AskQuestion />}
             </div>
           </div>
@@ -215,6 +229,7 @@ export default function Home() {
               <ul className="space-y-2 text-sm">
                 <li><a href="#updates" className="hover:text-white transition">Latest Updates</a></li>
                 <li><a href="#calendar" className="hover:text-white transition">Event Calendar</a></li>
+                <li><a href="#watchlist" className="hover:text-white transition">Amendment Watchlist</a></li>
                 <li><a href="#ask" className="hover:text-white transition">AI Assistant</a></li>
                 <li><a href="#subscribe" className="hover:text-white transition">Subscribe</a></li>
               </ul>

@@ -49,6 +49,23 @@ CONTEXTUAL_KEYWORDS = [
 # Combined list for local/Maryland-scoped feeds (OR logic)
 SCRAPER_KEYWORDS = MARYLAND_SPECIFIC_KEYWORDS + CONTEXTUAL_KEYWORDS
 
+# ── Amendment Watchlist keywords — any matter matching these gets auto-watched ─
+WATCHLIST_AUTO_DETECT_KEYWORDS = [
+    'zoning text amendment', 'zoning amendment', 'data center',
+    'qualified data center', 'ar zone', 're zone', 'eagle harbor',
+    'chalk point', 'cr-98-2025', 'eo 42-2025', 'moratorium',
+    'special exception', 'landover mall',
+]
+
+# Milestone action keywords — these trigger is_milestone=True in history tracking
+MILESTONE_ACTIONS = [
+    'introduced', 'referred', 'public hearing', 'hearing scheduled',
+    'amended', 'approved', 'denied', 'passed', 'failed', 'enacted',
+    'signed', 'vetoed', 'withdrawn', 'tabled', 'adopted',
+    'first reading', 'second reading', 'third reading',
+    'committee report', 'transmitted', 'effective date',
+]
+
 # Feeds that publish global/national content — require geographic AND-filter
 GLOBAL_FEEDS = {
     'https://www.datacenterknowledge.com/rss.xml',
@@ -144,7 +161,7 @@ def legistar_scraper(timer: func.TimerRequest) -> None:
     LEGISTAR_BASE = "https://webapi.legistar.com/v1/princegeorgescountymd"
     API_HEADERS = {"Accept": "application/json"}
     events_cutoff = (datetime.now() - timedelta(days=14)).strftime("%Y-%m-%d")
-    matters_cutoff = (datetime.now() - timedelta(days=30)).strftime("%Y-%m-%dT00:00:00")
+    matters_cutoff = (datetime.now() - timedelta(days=90)).strftime("%Y-%m-%dT00:00:00")
 
     # Only drill into agenda items for bodies that handle zoning / legislation
     ITEM_CHECK_TERMS = ['council', 'planning', 'zoning', 'environment', 'economic']
@@ -319,6 +336,34 @@ def legistar_scraper(timer: func.TimerRequest) -> None:
                 )
                 new_articles += 1
                 logging.info(f"New legislation: {title[:80]}")
+
+                # ── Auto-detect watchlist candidates ─────────────────
+                watch_text = f"{m_title} {m_name} {m_file} {m_type}".lower()
+                if any(kw in watch_text for kw in WATCHLIST_AUTO_DETECT_KEYWORDS):
+                    existing_watch = db.execute(
+                        text("SELECT 1 FROM watched_matters WHERE matter_id = :mid"),
+                        {"mid": m_id}
+                    ).first()
+                    if not existing_watch:
+                        try:
+                            db.execute(
+                                text("""
+                                INSERT INTO watched_matters
+                                    (matter_id, matter_file, matter_type, title, body_name,
+                                     current_status, legistar_url, watch_reason, auto_detected, is_active, priority)
+                                VALUES (:mid, :mfile, :mtype, :title, :body,
+                                        :status, :url, :reason, TRUE, TRUE, 'high')
+                                """),
+                                {
+                                    "mid": m_id, "mfile": m_file, "mtype": m_type,
+                                    "title": (m_name or m_title)[:500], "body": m_body,
+                                    "status": m_status, "url": matter_url,
+                                    "reason": f"Auto-detected: matched watchlist keywords in '{m_type}: {m_file}'"
+                                },
+                            )
+                            logging.info(f"Auto-watched matter {m_id}: {m_file} - {m_name or m_title[:60]}")
+                        except Exception as ew:
+                            logging.warning(f"Could not auto-watch matter {m_id}: {ew}")
 
             except Exception as e:
                 logging.error(f"Matter {matter.get('MatterId')} error: {e}")
@@ -576,6 +621,275 @@ def planning_board_scraper(timer: func.TimerRequest) -> None:
 
     except Exception as e:
         logging.error(f'Planning Board scraper error: {str(e)}')
+
+
+# ── Amendment Watchlist Tracker ──────────────────────────────────────────────
+
+@app.function_name(name="AmendmentWatchlistTracker")
+@app.schedule(schedule="0 15 */4 * * *", arg_name="timer", run_on_startup=False)
+def amendment_watchlist_tracker(timer: func.TimerRequest) -> None:
+    """Track active watched matters for status changes, new attachments, and votes.
+
+    Polls three Legistar API endpoints for each active watched matter:
+      1. /matters/{id}/histories   — status transitions (Introduced → Referred → etc.)
+      2. /matters/{id}/attachments — draft text, staff reports, memos
+      3. /matters/{id}/votes       — roll-call votes with individual Aye/Nay
+
+    Runs every 4 hours (offset 15 min from other scrapers).
+    New findings are stored in dedicated tables and flagged for notification.
+    """
+
+    logging.info('Amendment Watchlist Tracker started')
+
+    LEGISTAR_BASE = "https://webapi.legistar.com/v1/princegeorgescountymd"
+    API_HEADERS = {"Accept": "application/json"}
+
+    try:
+        db = SessionLocal()
+
+        # Get all active watched matters
+        watched = db.execute(
+            text("SELECT matter_id, current_status, title FROM watched_matters WHERE is_active = TRUE")
+        ).fetchall()
+
+        if not watched:
+            logging.info('No active watched matters — nothing to track')
+            db.close()
+            return
+
+        logging.info(f'Tracking {len(watched)} active watched matters')
+
+        new_histories = 0
+        new_attachments = 0
+        new_votes = 0
+        status_changes = 0
+
+        for row in watched:
+            mid = row[0]
+            prev_status = row[1] or ""
+            matter_title = row[2] or ""
+
+            # ── 1. Histories (status transitions) ────────────────────
+            try:
+                resp = requests.get(
+                    f"{LEGISTAR_BASE}/matters/{mid}/histories",
+                    headers=API_HEADERS,
+                    timeout=20,
+                )
+                resp.raise_for_status()
+                histories = resp.json()
+            except Exception as e:
+                logging.warning(f"History fetch failed for matter {mid}: {e}")
+                histories = []
+
+            latest_status = prev_status
+            latest_action_date = None
+
+            for hist in histories:
+                hist_id = hist.get("MatterHistoryId")
+                if not hist_id:
+                    continue
+
+                # Dedup check
+                exists = db.execute(
+                    text("SELECT 1 FROM matter_histories WHERE legistar_history_id = :hid"),
+                    {"hid": hist_id}
+                ).first()
+                if exists:
+                    continue
+
+                action_date_str = hist.get("MatterHistoryActionDate", "")
+                action_date = None
+                if action_date_str:
+                    try:
+                        action_date = datetime.fromisoformat(action_date_str.replace("Z", "+00:00").split("+")[0])
+                    except (ValueError, TypeError):
+                        pass
+
+                action_text = hist.get("MatterHistoryActionName", "")
+                action_body = hist.get("MatterHistoryActionBodyName", "")
+                result_text = hist.get("MatterHistoryPassedFlagName", "")
+                vote_info = hist.get("MatterHistoryTally", "")
+                minutes_note = hist.get("MatterHistoryMinutesNote", "")
+
+                # Detect milestone actions
+                is_milestone = any(
+                    ma in action_text.lower() for ma in MILESTONE_ACTIONS
+                )
+
+                # Track status progression
+                new_status = action_text or result_text or prev_status
+
+                db.execute(
+                    text("""
+                    INSERT INTO matter_histories
+                        (matter_id, legistar_history_id, action_date, action_text,
+                         action_body, result, vote_info, minutes_note,
+                         previous_status, new_status, is_milestone, notified, discovered_date)
+                    VALUES (:mid, :hid, :adate, :atext,
+                            :abody, :result, :vinfo, :mnote,
+                            :pstatus, :nstatus, :milestone, FALSE, :now)
+                    """),
+                    {
+                        "mid": mid, "hid": hist_id, "adate": action_date,
+                        "atext": action_text[:500], "abody": action_body[:200],
+                        "result": result_text[:100], "vinfo": vote_info[:200],
+                        "mnote": minutes_note,
+                        "pstatus": prev_status[:200], "nstatus": new_status[:200],
+                        "milestone": is_milestone, "now": datetime.now(),
+                    },
+                )
+                new_histories += 1
+
+                if action_date and (latest_action_date is None or action_date > latest_action_date):
+                    latest_action_date = action_date
+                    latest_status = new_status
+
+                if is_milestone:
+                    logging.info(
+                        f"[MILESTONE] Matter {mid}: {action_text} ({result_text}) on {action_date}"
+                    )
+
+            # Update matter's current status if changed
+            if latest_status != prev_status:
+                db.execute(
+                    text("""
+                    UPDATE watched_matters
+                    SET current_status = :status, last_action_date = :adate, updated_date = :now
+                    WHERE matter_id = :mid
+                    """),
+                    {"status": latest_status[:200], "adate": latest_action_date, "now": datetime.now(), "mid": mid},
+                )
+                status_changes += 1
+                logging.info(f"Status change for matter {mid}: '{prev_status}' → '{latest_status}'")
+
+            # ── 2. Attachments (draft text, staff reports) ───────────
+            try:
+                resp = requests.get(
+                    f"{LEGISTAR_BASE}/matters/{mid}/attachments",
+                    headers=API_HEADERS,
+                    timeout=20,
+                )
+                resp.raise_for_status()
+                attachments = resp.json()
+            except Exception as e:
+                logging.warning(f"Attachment fetch failed for matter {mid}: {e}")
+                attachments = []
+
+            for att in attachments:
+                att_id = att.get("MatterAttachmentId")
+                if not att_id:
+                    continue
+
+                exists = db.execute(
+                    text("SELECT 1 FROM matter_attachments WHERE legistar_attachment_id = :aid"),
+                    {"aid": att_id}
+                ).first()
+                if exists:
+                    continue
+
+                att_name = att.get("MatterAttachmentName", "")
+                att_link = att.get("MatterAttachmentHyperlink", "")
+                att_filename = att.get("MatterAttachmentFileName", "")
+                file_ext = att_filename.rsplit(".", 1)[-1].lower() if "." in att_filename else ""
+
+                # Try to scrape text content from non-PDF attachments
+                content_text = ""
+                if att_link and not att_link.lower().endswith(".pdf"):
+                    content_text = scrape_article_content(att_link)
+
+                db.execute(
+                    text("""
+                    INSERT INTO matter_attachments
+                        (matter_id, legistar_attachment_id, name, hyperlink,
+                         file_type, content_text, analyzed, notified, discovered_date)
+                    VALUES (:mid, :aid, :name, :link,
+                            :ftype, :content, FALSE, FALSE, :now)
+                    """),
+                    {
+                        "mid": mid, "aid": att_id, "name": att_name[:500],
+                        "link": att_link, "ftype": file_ext[:50],
+                        "content": content_text, "now": datetime.now(),
+                    },
+                )
+                new_attachments += 1
+                logging.info(f"New attachment for matter {mid}: {att_name[:80]}")
+
+            # ── 3. Votes (roll calls) ────────────────────────────────
+            try:
+                resp = requests.get(
+                    f"{LEGISTAR_BASE}/matters/{mid}/votes",
+                    headers=API_HEADERS,
+                    timeout=20,
+                )
+                resp.raise_for_status()
+                votes = resp.json()
+            except Exception as e:
+                logging.warning(f"Vote fetch failed for matter {mid}: {e}")
+                votes = []
+
+            for vote in votes:
+                vote_id = vote.get("VoteId")
+                if not vote_id:
+                    continue
+
+                exists = db.execute(
+                    text("SELECT 1 FROM matter_votes WHERE legistar_vote_id = :vid"),
+                    {"vid": vote_id}
+                ).first()
+                if exists:
+                    continue
+
+                vote_date_str = vote.get("VoteDate", "")
+                vote_date = None
+                if vote_date_str:
+                    try:
+                        vote_date = datetime.fromisoformat(vote_date_str.replace("Z", "+00:00").split("+")[0])
+                    except (ValueError, TypeError):
+                        pass
+
+                body_name = vote.get("VoteEventItemBodyName", "")
+                result_text = vote.get("VoteResult", "")
+                person_name = vote.get("VotePersonName", "")
+                vote_value = vote.get("VoteValueName", "")  # Aye, Nay, Abstain
+
+                # Votes API returns one row per person — aggregate into roll_call
+                # Store individual vote record; aggregation happens at API layer
+                tally = f"{person_name}: {vote_value}" if person_name else ""
+                roll_call_entry = [{"person": person_name, "vote": vote_value}] if person_name else []
+
+                db.execute(
+                    text("""
+                    INSERT INTO matter_votes
+                        (matter_id, legistar_vote_id, vote_date, body_name,
+                         result, tally, roll_call, notified, discovered_date)
+                    VALUES (:mid, :vid, :vdate, :body,
+                            :result, :tally, :roll_call, FALSE, :now)
+                    """),
+                    {
+                        "mid": mid, "vid": vote_id, "vdate": vote_date,
+                        "body": body_name[:200], "result": result_text[:100],
+                        "tally": tally[:50],
+                        "roll_call": json.dumps(roll_call_entry),
+                        "now": datetime.now(),
+                    },
+                )
+                new_votes += 1
+
+            if new_votes > 0:
+                logging.info(f"New votes for matter {mid}: {new_votes} records")
+
+        db.commit()
+        db.close()
+
+        logging.info(
+            f'Amendment Watchlist Tracker completed: '
+            f'{new_histories} new histories, {new_attachments} new attachments, '
+            f'{new_votes} new votes, {status_changes} status changes'
+        )
+
+    except Exception as e:
+        logging.error(f'Amendment Watchlist Tracker error: {str(e)}')
 
 
 @app.function_name(name="ArticleAnalyzer")
@@ -842,3 +1156,414 @@ def historical_scan(req: func.HttpRequest) -> func.HttpResponse:
             mimetype="application/json",
             status_code=500
         )
+
+
+# ── Instant Alert Sender ─────────────────────────────────────────────────────
+
+@app.function_name(name="InstantAlertSender")
+@app.schedule(schedule="0 */10 * * * *", arg_name="timer", run_on_startup=False)
+def instant_alert_sender(timer: func.TimerRequest) -> None:
+    """Send instant email alerts for high-priority articles and watchlist milestones.
+
+    Checks for:
+      1. Analyzed articles with priority_score >= 8 that haven't been notified
+      2. Watchlist milestone history entries that haven't been notified
+      3. New watchlist attachments that haven't been notified
+
+    Runs every 10 minutes (same cadence as ArticleAnalyzer).
+    """
+    logging.info('Instant Alert Sender started')
+
+    try:
+        db = SessionLocal()
+
+        # Get verified active subscribers
+        subscribers = db.execute(
+            text("SELECT email FROM subscribers WHERE verified = TRUE AND is_active = TRUE")
+        ).fetchall()
+
+        if not subscribers:
+            logging.info('No active subscribers — skipping alerts')
+            db.close()
+            return
+
+        sub_emails = [row[0] for row in subscribers]
+        logging.info(f'{len(sub_emails)} active subscribers')
+
+        alerts_sent = 0
+
+        # ── 1. High-priority articles (priority >= 8, analyzed, not notified)
+        high_priority = db.execute(
+            text("""
+            SELECT id, title, url, summary, source, priority_score
+            FROM articles
+            WHERE analyzed = TRUE AND notified = FALSE AND priority_score >= 8
+            ORDER BY priority_score DESC
+            LIMIT 5
+            """)
+        ).fetchall()
+
+        for art in high_priority:
+            art_id, title, url, summary, source, priority = art
+            logging.info(f"Sending alert for article {art_id}: {title[:60]} (priority={priority})")
+
+            try:
+                from azure.communication.email import EmailClient
+                comm_conn = os.environ.get("AZURE_COMM_CONNECTION_STRING")
+                from_email = os.environ.get("FROM_EMAIL", "")
+
+                if comm_conn and from_email:
+                    email_client = EmailClient.from_connection_string(comm_conn)
+                    badge = "🚨 CRITICAL" if priority >= 9 else "⚠️ URGENT"
+
+                    for email_addr in sub_emails:
+                        html = f"""
+                        <html><body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                        <div style="background: #dc3545; color: white; padding: 20px; text-align: center;">
+                            <h1>{badge}: Data Center Alert</h1>
+                        </div>
+                        <div style="padding: 30px; background: #f9fafb;">
+                            <h2>{title}</h2>
+                            <p><strong>Source:</strong> {source} | <strong>Priority:</strong> {priority}/10</p>
+                            <div style="background: white; padding: 15px; border-left: 4px solid #dc3545; margin: 15px 0;">
+                                {summary or 'Click through to read the full article.'}
+                            </div>
+                            <div style="text-align: center; margin: 20px 0;">
+                                <a href="{url}" style="background: #1e40af; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px;">Read Full Article</a>
+                            </div>
+                        </div>
+                        </body></html>
+                        """
+                        msg = {
+                            "senderAddress": from_email,
+                            "recipients": {"to": [{"address": email_addr}]},
+                            "content": {
+                                "subject": f"{badge}: {title[:80]}",
+                                "html": html,
+                            },
+                        }
+                        try:
+                            poller = email_client.begin_send(msg)
+                            poller.result()
+                            alerts_sent += 1
+                        except Exception as se:
+                            logging.error(f"Email send error for {email_addr}: {se}")
+
+                    db.execute(
+                        text("UPDATE articles SET notified = TRUE WHERE id = :id"),
+                        {"id": art_id}
+                    )
+                else:
+                    logging.warning("Azure Comm Services not configured — skipping email send")
+                    db.execute(
+                        text("UPDATE articles SET notified = TRUE WHERE id = :id"),
+                        {"id": art_id}
+                    )
+            except ImportError:
+                logging.warning("azure-communication-email not installed — skipping email send")
+                db.execute(
+                    text("UPDATE articles SET notified = TRUE WHERE id = :id"),
+                    {"id": art_id}
+                )
+
+        # ── 2. Watchlist milestone changes (not yet notified)
+        try:
+            milestones = db.execute(
+                text("""
+                SELECT mh.id, mh.matter_id, mh.action_text, mh.result, mh.action_date,
+                       wm.title, wm.legistar_url
+                FROM matter_histories mh
+                JOIN watched_matters wm ON wm.matter_id = mh.matter_id
+                WHERE mh.is_milestone = TRUE AND mh.notified = FALSE
+                ORDER BY mh.discovered_date DESC
+                LIMIT 10
+                """)
+            ).fetchall()
+
+            for ms in milestones:
+                ms_id, mid, action_text, result, action_date, matter_title, legistar_url = ms
+                detail = f"{action_text}"
+                if result:
+                    detail += f" — {result}"
+                if action_date:
+                    detail += f" (on {str(action_date)[:10]})"
+
+                logging.info(f"Watchlist milestone alert: matter {mid} - {detail}")
+
+                try:
+                    from azure.communication.email import EmailClient
+                    comm_conn = os.environ.get("AZURE_COMM_CONNECTION_STRING")
+                    from_email = os.environ.get("FROM_EMAIL", "")
+
+                    if comm_conn and from_email:
+                        email_client = EmailClient.from_connection_string(comm_conn)
+                        for email_addr in sub_emails:
+                            html = f"""
+                            <html><body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                            <div style="background: #f59e0b; color: white; padding: 20px; text-align: center;">
+                                <h1>📋 Amendment Watchlist Update</h1>
+                            </div>
+                            <div style="padding: 30px; background: #f9fafb;">
+                                <h2>{matter_title}</h2>
+                                <div style="background: white; padding: 15px; border-left: 4px solid #f59e0b; margin: 15px 0;">
+                                    <p><strong>Change:</strong> {detail}</p>
+                                </div>
+                                {"<div style='text-align: center; margin: 20px 0;'><a href='" + legistar_url + "' style='background: #1e40af; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px;'>View on Legistar</a></div>" if legistar_url else ""}
+                            </div>
+                            </body></html>
+                            """
+                            msg = {
+                                "senderAddress": from_email,
+                                "recipients": {"to": [{"address": email_addr}]},
+                                "content": {
+                                    "subject": f"📋 Watchlist: {matter_title[:60]} — {action_text[:40]}",
+                                    "html": html,
+                                },
+                            }
+                            try:
+                                poller = email_client.begin_send(msg)
+                                poller.result()
+                                alerts_sent += 1
+                            except Exception as se:
+                                logging.error(f"Watchlist email error for {email_addr}: {se}")
+                except (ImportError, Exception) as ex:
+                    logging.warning(f"Could not send watchlist email: {ex}")
+
+                db.execute(
+                    text("UPDATE matter_histories SET notified = TRUE WHERE id = :id"),
+                    {"id": ms_id}
+                )
+
+        except Exception as e:
+            logging.warning(f"Watchlist milestone check failed (tables may not exist yet): {e}")
+
+        # ── 3. New watchlist attachments (not yet notified)
+        try:
+            new_atts = db.execute(
+                text("""
+                SELECT ma.id, ma.matter_id, ma.name, wm.title, wm.legistar_url
+                FROM matter_attachments ma
+                JOIN watched_matters wm ON wm.matter_id = ma.matter_id
+                WHERE ma.notified = FALSE
+                ORDER BY ma.discovered_date DESC
+                LIMIT 10
+                """)
+            ).fetchall()
+
+            for att in new_atts:
+                att_id = att[0]
+                db.execute(
+                    text("UPDATE matter_attachments SET notified = TRUE WHERE id = :id"),
+                    {"id": att_id}
+                )
+
+        except Exception as e:
+            logging.warning(f"Attachment notification check failed: {e}")
+
+        db.commit()
+        db.close()
+        logging.info(f'Instant Alert Sender completed: {alerts_sent} emails sent')
+
+    except Exception as e:
+        logging.error(f'Instant Alert Sender error: {str(e)}')
+
+
+# ── Weekly Digest Sender ─────────────────────────────────────────────────────
+
+@app.function_name(name="WeeklyDigestSender")
+@app.schedule(schedule="0 0 15 * * 5", arg_name="timer", run_on_startup=False)
+def weekly_digest_sender(timer: func.TimerRequest) -> None:
+    """Send weekly digest every Friday at 3 PM.
+
+    Collects:
+      - Top articles from the past 7 days (sorted by priority)
+      - Watchlist changes from the past 7 days
+      - Upcoming events in the next 14 days
+    """
+    logging.info('Weekly Digest Sender started')
+
+    try:
+        db = SessionLocal()
+        week_ago = datetime.now() - timedelta(days=7)
+        two_weeks = datetime.now() + timedelta(days=14)
+
+        # Get subscribers
+        subscribers = db.execute(
+            text("""
+            SELECT email, unsubscribe_token
+            FROM subscribers WHERE verified = TRUE AND is_active = TRUE
+            """)
+        ).fetchall()
+
+        if not subscribers:
+            logging.info('No active subscribers — skipping digest')
+            db.close()
+            return
+
+        # Top articles
+        articles = db.execute(
+            text("""
+            SELECT title, url, summary, priority_score, category, source
+            FROM articles
+            WHERE analyzed = TRUE AND discovered_date >= :cutoff
+              AND (relevance_score >= 4 OR relevance_score IS NULL)
+            ORDER BY priority_score DESC, discovered_date DESC
+            LIMIT 15
+            """),
+            {"cutoff": week_ago}
+        ).fetchall()
+
+        article_list = [
+            {"title": a[0], "url": a[1], "summary": a[2],
+             "priority_score": a[3], "category": a[4], "source": a[5]}
+            for a in articles
+        ]
+
+        # Watchlist changes
+        watchlist_changes = []
+        try:
+            changes = db.execute(
+                text("""
+                SELECT mh.action_text, mh.result, mh.action_date, wm.title
+                FROM matter_histories mh
+                JOIN watched_matters wm ON wm.matter_id = mh.matter_id
+                WHERE mh.discovered_date >= :cutoff
+                ORDER BY mh.action_date DESC
+                LIMIT 10
+                """),
+                {"cutoff": week_ago}
+            ).fetchall()
+
+            for c in changes:
+                detail = c[0] or ""
+                if c[1]:
+                    detail += f" — {c[1]}"
+                if c[2]:
+                    detail += f" ({str(c[2])[:10]})"
+                watchlist_changes.append({
+                    "matter_title": c[3],
+                    "change_type": "status_change",
+                    "detail": detail,
+                })
+        except Exception:
+            logging.warning("Could not fetch watchlist changes for digest")
+
+        # Upcoming events
+        upcoming = []
+        try:
+            events = db.execute(
+                text("""
+                SELECT title, event_date, location, event_type
+                FROM events
+                WHERE event_date >= :now AND event_date <= :end
+                  AND is_cancelled = FALSE
+                ORDER BY event_date
+                LIMIT 10
+                """),
+                {"now": datetime.now(), "end": two_weeks}
+            ).fetchall()
+
+            for e in events:
+                upcoming.append({
+                    "title": e[0],
+                    "event_date": str(e[1])[:16] if e[1] else "TBD",
+                    "location": e[2] or "",
+                    "event_type": e[3] or "",
+                })
+        except Exception:
+            logging.warning("Could not fetch upcoming events for digest")
+
+        # Send digest to each subscriber
+        digests_sent = 0
+        try:
+            from azure.communication.email import EmailClient
+            comm_conn = os.environ.get("AZURE_COMM_CONNECTION_STRING")
+            from_email = os.environ.get("FROM_EMAIL", "")
+
+            if not comm_conn or not from_email:
+                logging.warning("Azure Comm Services not configured — skipping digest")
+                db.close()
+                return
+
+            email_client = EmailClient.from_connection_string(comm_conn)
+            today = datetime.now().strftime("%B %d, %Y")
+
+            for row in subscribers:
+                email_addr, unsub_token = row[0], row[1]
+
+                # Build article rows
+                article_rows = ""
+                for a in article_list:
+                    p = a.get("priority_score", 0)
+                    badge = "🚨" if p and p >= 8 else "⚠️" if p and p >= 6 else "📰"
+                    article_rows += f"""<tr>
+                        <td style="padding: 8px; border-bottom: 1px solid #e5e7eb;">
+                            {badge} <a href="{a['url']}" style="color:#1e40af;">{a['title'][:100]}</a>
+                        </td>
+                        <td style="padding: 8px; border-bottom: 1px solid #e5e7eb; text-align:center;">{a.get('category','')}</td>
+                    </tr>"""
+
+                articles_html = ""
+                if article_list:
+                    articles_html = f"""<h3>📰 Top Articles This Week ({len(article_list)})</h3>
+                    <table style="width:100%;border-collapse:collapse;"><thead><tr>
+                        <th style="padding:8px;text-align:left;border-bottom:2px solid #d1d5db;">Article</th>
+                        <th style="padding:8px;text-align:center;border-bottom:2px solid #d1d5db;">Category</th>
+                    </tr></thead><tbody>{article_rows}</tbody></table>"""
+
+                watchlist_html = ""
+                if watchlist_changes:
+                    items = "".join(
+                        f"<li><strong>{c['matter_title']}</strong>: {c['detail']}</li>"
+                        for c in watchlist_changes
+                    )
+                    watchlist_html = f"<h3>📋 Amendment Watchlist Updates</h3><ul>{items}</ul>"
+
+                events_html = ""
+                if upcoming:
+                    items = "".join(
+                        f"<li><strong>{e['event_date']}</strong> — {e['title']}"
+                        f"{' @ ' + e['location'] if e.get('location') else ''}</li>"
+                        for e in upcoming
+                    )
+                    events_html = f"<h3>📅 Upcoming Events</h3><ul>{items}</ul>"
+
+                unsub_url = f"{os.environ.get('APP_URL', 'https://eagleharbormonitor.org')}/unsubscribe/{unsub_token}"
+
+                html = f"""<html><body style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;">
+                <div style="background:#1e40af;color:white;padding:20px;text-align:center;">
+                    <h1>Weekly Digest</h1>
+                    <p style="margin:5px 0 0;">Eagle Harbor Data Center Monitor — {today}</p>
+                </div>
+                <div style="padding:30px;background:#f9fafb;">
+                    {articles_html}{watchlist_html}{events_html}
+                    {"<p style='color:#9ca3af;'>No notable updates this week.</p>" if not article_list and not watchlist_changes and not upcoming else ""}
+                </div>
+                <div style="padding:20px;text-align:center;color:#6b7280;font-size:12px;">
+                    <a href="{unsub_url}" style="color:#6b7280;">Unsubscribe</a>
+                </div>
+                </body></html>"""
+
+                msg = {
+                    "senderAddress": from_email,
+                    "recipients": {"to": [{"address": email_addr}]},
+                    "content": {
+                        "subject": f"Weekly Digest — Eagle Harbor Monitor ({today})",
+                        "html": html,
+                    },
+                }
+                try:
+                    poller = email_client.begin_send(msg)
+                    poller.result()
+                    digests_sent += 1
+                except Exception as se:
+                    logging.error(f"Digest send error for {email_addr}: {se}")
+
+        except ImportError:
+            logging.warning("azure-communication-email not installed")
+
+        db.close()
+        logging.info(f'Weekly Digest completed: {digests_sent} digests sent')
+
+    except Exception as e:
+        logging.error(f'Weekly Digest error: {str(e)}')
