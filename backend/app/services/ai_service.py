@@ -51,8 +51,10 @@ Your task is to analyze news articles and government documents, then return stru
 ### priority_score (1–10)
 - 1-3: Informational/background (general industry trends, historical context)
 - 4-5: Notable (new reports, early-stage proposals, committee formations)
-- 6-7: Important (public hearings scheduled, draft legislation, environmental reviews)
-- 8-9: Urgent (imminent votes, zoning decisions, legal challenges, emergency meetings)
+- 6-7: Important (public hearings scheduled, draft legislation, environmental reviews, \
+rate case filings, grid capacity studies)
+- 8-9: Urgent (imminent votes, zoning decisions, legal challenges, emergency meetings, \
+major rate increases, grid reliability warnings)
 - 10: Critical/breaking (final votes, moratorium enacted, major facility approved/denied)
 
 ### category (choose exactly ONE)
@@ -73,7 +75,9 @@ Your task is to analyze news articles and government documents, then return stru
 ## Critical keywords that INCREASE scores
 CR-98-2025, EO 42-2025, Eagle Harbor, Chalk Point, qualified data center, AR zone, RE zone,
 MNCPPC, Planning Board, zoning text amendment, moratorium, special exception, PEPCO, grid capacity,
-Landover Mall, Brandywine, task force, environmental justice, Patuxent River
+Landover Mall, Brandywine, task force, environmental justice, Patuxent River,
+power grid, transmission line, substation, rate increase, rate case, PJM, SMECO, BGE,
+Maryland PSC, energy infrastructure, grid reliability, electric capacity, utility rate
 
 Return ONLY valid JSON with keys: relevance_score, priority_score, category, county, summary, key_points."""
 
@@ -89,6 +93,10 @@ developments in Prince George's County and Charles County, Maryland. Today is {t
 - Key sites: Chalk Point Power Plant, Landover Mall, Eagle Harbor
 - Community stakeholder dynamics and opposition movements
 - National and global data center industry trends, market analysis, and technology
+- **Power grid & energy infrastructure**: PJM Interconnection, PEPCO, SMECO, BGE service territories, \
+Maryland PSC rate cases, transmission line upgrades, substation capacity, energy cost impacts \
+on residents and businesses, renewable energy mandates, grid reliability concerns from \
+large-load data center connections
 
 ## Source types you may receive
 1. **[Article N]** — Saved articles from our monitoring database (most trusted for local facts)
@@ -121,17 +129,42 @@ continuously from government and news sources.
 
 
 EVENT_EXTRACTION_SYSTEM = """You are an expert at extracting structured event data from government \
-documents and news articles about Maryland data center developments.
+documents and news articles about Maryland data center developments and power grid infrastructure.
+
+## CRITICAL SCOPE RULE
+Only extract events that are located in or directly relevant to **Maryland** — specifically \
+Prince George's County, Charles County, or Maryland statewide. 
+
+DO NOT extract events for:
+- Other U.S. states (Virginia, Texas, Ohio, etc.)
+- Other countries
+- National industry conferences NOT held in Maryland
+- Generic corporate announcements without a Maryland connection
+
+If an article mentions events in multiple states, ONLY extract the Maryland ones.
 
 ## Rules
 1. Only extract events with SPECIFIC dates/times mentioned in the text.
 2. Infer reasonable end times for meetings (typically 2-3 hours) if not stated.
 3. For recurring meetings (e.g., "every 2nd Thursday"), set is_recurring=true.
 4. Use ISO 8601 format: YYYY-MM-DDTHH:MM:SS
-5. Event types: meeting, deadline, hearing, vote, protest, announcement
-6. Counties: prince_georges, charles, both
+5. Event types: meeting, deadline, hearing, vote, protest, announcement, energy
+   - Use "energy" for: rate hearings, grid capacity meetings, PSC proceedings, \
+PJM planning sessions, utility infrastructure open houses, power plant hearings
+6. Counties: prince_georges, charles, both, maryland_statewide
+   - Use "maryland_statewide" for state-level events (PSC hearings, General Assembly, \
+Governor's office actions)
+   - NEVER use "unclear" for events — if you cannot determine a Maryland location, skip the event
 7. If a date is ambiguous or uncertain, skip it — do NOT guess.
-8. Return empty array [] if no concrete events are found."""
+8. Return empty array [] if no concrete Maryland events are found.
+
+## Power grid / energy events to look for
+- Maryland PSC rate case hearings
+- PJM Interconnection planning meetings affecting PEPCO/SMECO/BGE zones
+- Utility infrastructure upgrade public hearings
+- Energy cost impact studies released
+- Grid capacity assessment meetings
+- Renewable energy project siting hearings in PG/Charles County"""
 
 
 # ── Amendment / Zoning Text Analysis ─────────────────────────────────────────
@@ -617,15 +650,17 @@ Content: {title} {content}
 Return a JSON object with an "events" key containing an array. Each event:
 {{
   "title": "descriptive event title",
-  "event_type": "meeting|deadline|hearing|vote|protest|announcement",
+  "event_type": "meeting|deadline|hearing|vote|protest|announcement|energy",
   "event_date": "YYYY-MM-DDTHH:MM:SS",
   "end_date": "YYYY-MM-DDTHH:MM:SS or null",
   "location": "venue and address if mentioned",
   "description": "1-2 sentence description of what will happen",
-  "county": "prince_georges|charles|both"
+  "county": "prince_georges|charles|both|maryland_statewide"
 }}
 
-Return {{"events": []}} if no specific dates are found."""
+IMPORTANT: Only include events in Maryland (Prince George's County, Charles County, or state-level).
+Do NOT include events in other states. Use county="maryland_statewide" for state-level events.
+Return {{"events": []}} if no specific Maryland dates are found."""
 
         messages = [
             {"role": "system", "content": EVENT_EXTRACTION_SYSTEM},

@@ -607,10 +607,14 @@ async def get_upcoming_events(
     now = datetime.now()
     end_date = now + timedelta(days=days)
     
+    # Maryland-scoped: only show PG County, Charles County, both, or statewide events
+    MARYLAND_COUNTIES = ['prince_georges', 'charles', 'both', 'maryland_statewide']
+    
     query = db.query(Event).filter(
         Event.event_date >= now,
         Event.event_date <= end_date,
-        Event.is_cancelled == False
+        Event.is_cancelled == False,
+        Event.county.in_(MARYLAND_COUNTIES)
     )
     
     if county:
@@ -651,9 +655,13 @@ async def get_event_timeline(
     now = datetime.now()
     start_date = now - timedelta(days=days_back)
     
+    # Maryland-scoped: only show PG County, Charles County, both, or statewide events
+    MARYLAND_COUNTIES = ['prince_georges', 'charles', 'both', 'maryland_statewide']
+    
     query = db.query(Event).filter(
         Event.event_date >= start_date,
-        Event.event_date <= now
+        Event.event_date <= now,
+        Event.county.in_(MARYLAND_COUNTIES)
     )
     
     if county:

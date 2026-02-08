@@ -27,6 +27,11 @@ MARYLAND_SPECIFIC_KEYWORDS = [
     'MNCPPC', 'patuxent river', 'PEPCO',
     'prince george', 'charles county', 'pg county',
     'upper marlboro', 'brandywine', 'bowie',
+    # Power grid / energy infrastructure (Maryland-specific)
+    'SMECO', 'southern maryland electric', 'BGE', 'baltimore gas',
+    'maryland PSC', 'public service commission',
+    'maryland energy administration', 'PJM maryland',
+    'chalk point substation', 'morgantown generating',
 ]
 
 # Geographic terms that confirm Maryland relevance
@@ -44,6 +49,15 @@ CONTEXTUAL_KEYWORDS = [
     'legislative amendment', 'moratorium', 'special exception',
     'zoning text amendment', 'task force', 'environmental justice',
     'grid capacity', 'megawatt', 'cooling water',
+    # Power grid / energy infrastructure
+    'power grid', 'transmission line', 'substation', 'energy cost',
+    'electricity rate', 'rate increase', 'rate hike', 'rate case',
+    'interconnection', 'PJM', 'grid reliability',
+    'renewable energy', 'solar farm', 'energy infrastructure',
+    'power plant', 'generating station', 'transformer',
+    'grid upgrade', 'distribution system', 'electric capacity',
+    'demand response', 'peak demand', 'brownout', 'blackout',
+    'utility rate', 'kilowatt', 'gigawatt',
 ]
 
 # Combined list for local/Maryland-scoped feeds (OR logic)
@@ -70,6 +84,7 @@ MILESTONE_ACTIONS = [
 GLOBAL_FEEDS = {
     'https://www.datacenterknowledge.com/rss.xml',
     'https://www.datacenterdynamics.com/en/rss/',
+    'https://www.utilitydive.com/feeds/news/',
 }
 
 # Regional feeds covering broad DC-metro area — also require geographic match
@@ -397,10 +412,18 @@ def rss_news_scraper(timer: func.TimerRequest) -> None:
         ("https://patch.com/feeds/maryland/bowie", "Patch Bowie"),
         ("https://patch.com/feeds/maryland/upper-marlboro", "Patch Upper Marlboro"),
         ("https://patch.com/feeds/maryland/college-park", "Patch College Park"),
+        # Charles County local
+        ("https://patch.com/feeds/maryland/waldorf", "Patch Waldorf"),
+        ("https://patch.com/feeds/maryland/la-plata", "Patch La Plata"),
         # Maryland state government
         ("https://news.maryland.gov/mde/feed/", "MD Dept of Environment"),
         # MNCPPC / Planning Board
         ("https://pgplanningboard.org/feed/", "PG Planning Board"),
+        # Maryland energy / power grid
+        ("https://www.pjm.com/RSS/news-releases.xml", "PJM Interconnection"),
+        ("https://www.psc.state.md.us/feed/", "MD Public Service Commission"),
+        ("https://energy.maryland.gov/Pages/News.aspx", "MD Energy Administration"),
+        ("https://www.utilitydive.com/feeds/news/", "Utility Dive"),
         # Data center industry
         ("https://www.datacenterknowledge.com/rss.xml", "Data Center Knowledge"),
         ("https://www.datacenterdynamics.com/en/rss/", "Data Center Dynamics"),
@@ -1061,8 +1084,14 @@ def historical_scan(req: func.HttpRequest) -> func.HttpResponse:
             ("https://patch.com/feeds/maryland/bowie", "Patch Bowie"),
             ("https://patch.com/feeds/maryland/upper-marlboro", "Patch Upper Marlboro"),
             ("https://patch.com/feeds/maryland/college-park", "Patch College Park"),
+            ("https://patch.com/feeds/maryland/waldorf", "Patch Waldorf"),
+            ("https://patch.com/feeds/maryland/la-plata", "Patch La Plata"),
             ("https://news.maryland.gov/mde/feed/", "MD Dept of Environment"),
             ("https://pgplanningboard.org/feed/", "PG Planning Board"),
+            ("https://www.pjm.com/RSS/news-releases.xml", "PJM Interconnection"),
+            ("https://www.psc.state.md.us/feed/", "MD Public Service Commission"),
+            ("https://energy.maryland.gov/Pages/News.aspx", "MD Energy Administration"),
+            ("https://www.utilitydive.com/feeds/news/", "Utility Dive"),
             ("https://www.datacenterknowledge.com/rss.xml", "Data Center Knowledge"),
             ("https://www.datacenterdynamics.com/en/rss/", "Data Center Dynamics"),
         ]

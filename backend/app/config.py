@@ -37,6 +37,13 @@ class Settings(BaseSettings):
         "task force", "environmental justice", "PEPCO", "grid capacity",
         "megawatt", "cooling water", "patuxent river",
         "upper marlboro", "brandywine", "bowie",
+        # Power grid / energy infrastructure
+        "power grid", "transmission line", "substation", "energy cost",
+        "electricity rate", "rate increase", "rate hike", "rate case",
+        "interconnection", "PJM", "grid reliability", "grid upgrade",
+        "SMECO", "BGE", "Maryland PSC", "public service commission",
+        "energy infrastructure", "power plant", "generating station",
+        "electric capacity", "utility rate", "renewable energy",
     ]
     
     # AI tuning parameters

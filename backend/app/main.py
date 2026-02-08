@@ -45,6 +45,28 @@ def _migrate_sqlite():
 
 _migrate_sqlite()
 
+
+def _cleanup_non_maryland_events():
+    """Remove events that are not scoped to Maryland (one-time cleanup)."""
+    try:
+        from sqlalchemy import text as sa_text
+        with engine.connect() as conn:
+            maryland_counties = ('prince_georges', 'charles', 'both', 'maryland_statewide')
+            result = conn.execute(
+                sa_text("""
+                    DELETE FROM events
+                    WHERE county IS NOT NULL
+                      AND county NOT IN ('prince_georges', 'charles', 'both', 'maryland_statewide')
+                """)
+            )
+            conn.commit()
+            if result.rowcount > 0:
+                logger.info("Cleaned up %d non-Maryland events from database", result.rowcount)
+    except Exception as e:
+        logger.warning("Event cleanup failed (non-fatal): %s", e)
+
+_cleanup_non_maryland_events()
+
 app = FastAPI(
     title=settings.APP_NAME,
     description="Monitor data center developments in Prince George's and Charles County, Maryland",
